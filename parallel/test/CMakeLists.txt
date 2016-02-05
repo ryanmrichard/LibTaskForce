@@ -1,0 +1,10 @@
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+add_executable(TestParallel main.cpp)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../src)
+target_link_libraries(TestParallel parallel ${MADNESS_LIBRARIES})
+add_dependencies(TestParallel parallel)
+install(TARGETS TestParallel RUNTIME DESTINATION bin)

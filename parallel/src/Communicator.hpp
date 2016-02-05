@@ -43,12 +43,42 @@ class Communicator{
       ///until all other members arrive
       void Barrier()const;
 
-      ///Adds a task to the queue and then gives you a future to the result
-      template<typename T,typename T1, typename T2>
-      Future<typename std::result_of<T(T1,T2)>::type>&&
-      AddTask(T YourTask,T1 arg1, T2 arg2){
-         Future<typename std::result_of<T(T1,T2)>::type>
-                (World_.taskq.add(YourTask,arg1,arg2));
+      /** \brief Adds a task to the queue and then gives you a future to the
+       *  result.
+       * 
+       *  Let's say you have some function, creatively named "MyFxn" that
+       *  returns an object of type "ReturnType".  Furthermore, assume your
+       *  function takes two arguments of types "Type1" and "Type2".  Now
+       *  assume you have a whole bunch of pairs of objects of "Type1" and
+       *  "Type2" for which you want to evaluate "MyFxn".  You ask this
+       *  communicator to run  those tasks via something like:
+       *  \code
+       *  Communicator AComm;
+       *  Type1 Input1,Input2,Input3;
+       *  Type2 Input4,Input5,Input6;
+       *  Future<ReturnType> Result1=AComm.AddTask(MyFxn,Input1,Input4);
+       *  Future<ReturnType> Result2=AComm.AddTask(MyFxn,Input2,Input5);
+       *  Future<ReturnType> Result3=AComm.AddTask(MyFxn,Input3,Input6);
+       *  \endcode
+       *  Each time you add a task, you are given a Future back.  See the Future
+       *  documentation for more details on using it.
+       * 
+       *  \params[in] YourTask a function or functor that is callable with the
+       *              next N arguments to AddTask
+       *  \params[in] args N arguments that will be passed to the callable
+       *                     object you gave us as YourTask
+       *  \return A future to an object of type ReturnType, where ReturnType is
+       *          the return type of YourTask.
+       * 
+       *  Note: This ultimately calls Madness, which has a 9 argument limit.
+       *  If you need more than 9 arguments consider
+       *  using a tuple as one of the arguments, or some other container.
+       */
+      template<typename Fxn_t,typename...Args>
+      Future<typename std::result_of<Fxn_t(Args...)>::type>
+      AddTask(Fxn_t YourTask,Args... args){
+         return Future<typename std::result_of<Fxn_t(Args...)>::type>
+                (World_.taskq.add(YourTask,args...));
       }
 
    private:
