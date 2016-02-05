@@ -4,8 +4,7 @@
 #include <type_traits>
 #include "Future.hpp"
 
-namespace bpmodule{
-namespace LibParallel{
+namespace LibTaskForce{
 
 /** \brief Class that handles interactions with the parallel environment
  *
@@ -90,7 +89,7 @@ class Communicator{
 };
 
 
-}}//End namespaces
+}//End namespaces
 
 
 

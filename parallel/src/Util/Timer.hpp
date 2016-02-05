@@ -5,6 +5,7 @@
 #include <chrono>
 #include <array>
 
+namespace LibTaskForce{
 namespace Util{
     
 ///The types of clocks, only support wall time at the moment
@@ -93,5 +94,5 @@ inline std::ostream& operator<<(std::ostream& os,const SmartTimer& ST){
     return os<<ST.ToString();
 }
 
-}
+}}//End namespaces
 #endif /* PARALLEL_UTIL_TIMER_HPP_ */

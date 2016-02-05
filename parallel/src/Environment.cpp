@@ -4,8 +4,7 @@
 #include "Communicator.hpp"
 #include "ParallelAssert.hpp"
 
-namespace bpmodule{
-namespace LibParallel{
+namespace LibTaskForce{
 
 Environment::Environment(size_t NThreads,int argc, char** argv):
       argc_(argc),argv_(argv),NThreads_(NThreads){
@@ -36,5 +35,5 @@ Communicator& Environment::Comm(){
    PARALLEL_ASSERT((Comm_!=nullptr),"Communicator is not set");
    return *Comm_;
 }
-}}//End namespaces
+}//End namespaces
 

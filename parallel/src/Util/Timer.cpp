@@ -1,6 +1,7 @@
 #include<sstream>
 #include "Timer.hpp"
 
+namespace LibTaskForce{
 namespace Util{
     
 SmartTimer::SmartTimer(const std::string& Name, bool IsParallel):
@@ -47,4 +48,4 @@ std::string SmartTimer::ToString()const{
 }
     
     
-}//End namespace
+}}//End namespaces

@@ -1,8 +1,7 @@
 #ifndef PARALLEL_ENVIRONMENT_HPP_
 #define PARALLEL_ENVIRONMENT_HPP_
 
-namespace bpmodule{
-namespace LibParallel{
+namespace LibTaskForce{
 
 class Communicator;
 
@@ -40,6 +39,6 @@ class Environment{
 };
 
 
-}}//End namespaces
+}//End namespaces
 
 #endif /* PARALLEL_ENVIRONMENT_HPP_ */

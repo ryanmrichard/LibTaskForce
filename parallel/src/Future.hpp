@@ -5,8 +5,7 @@
 #include "madness/world/MADworld.h"
 #include "ParallelAssert.hpp"
 
-namespace bpmodule{
-namespace LibParallel{
+namespace LibTaskForce{
 
 /** \brief A class that holds a future result
  *
@@ -115,8 +114,5 @@ inline std::ostream& operator<<(std::ostream& os, const Future<T>& Ftr){
 }
 
 
-}}
-
-
-
+}//End namespace
 #endif /* PARALLEL_FUTURE_HPP_ */
