@@ -1,11 +1,13 @@
 set(ParallelSrc Communicator.cpp
                 Environment.cpp
+                MadnessHelper.cpp
                 Util/Timer.cpp
 )
 set(ParallelHeaders Communicator.hpp
                     Environment.hpp
                     Future.hpp
                     LibParallel.hpp
+                    MadnessHelper.hpp
                     ParallelAssert.hpp
                     Util/Timer.hpp
 )

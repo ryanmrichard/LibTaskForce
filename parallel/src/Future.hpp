@@ -102,6 +102,8 @@ class Future{
       friend class Communicator;
       ///The constructor makes a Future that actually does stuff
       Future(const mFuture_t& future):DaFuture_(new mFuture_t(future)){}
+      ///The constructor for setting the value immediatly
+      Future(const T& Value):DaFuture_(new mFuture_t(Value)){}
       ///The implementation of this future
       SharedFuture_t DaFuture_;
 };
