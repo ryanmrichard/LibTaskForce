@@ -23,39 +23,36 @@ int main(int argc,char** argv){
     size_t NThreads=atoi(argv[1]);
    Par::Environment DaEnv(NThreads);
    const Par::Communicator& Comm=DaEnv.Comm();
-   {
-       std::cout<<Comm<<std::endl;
-       const std::unique_ptr<Par::Communicator> NewComm=Comm.Split(1,2);
-       std::cout<<*NewComm<<std::endl;
-   }
+   std::unique_ptr<Par::Communicator> MyComm=Comm.Split(1,1);
     
     
-   /*Par::Util::SmartTimer TotalTimer("Total Timer"); 
-   size_t NThreads=1;
-   Par::Environment DaEnv(NThreads);
-   Par::Communicator& Comm=DaEnv.Comm();
-   
+   Par::Util::SmartTimer TotalTimer("Total Timer");
    std::vector<Par::Future<double>> Ftrs;
    Par::Util::SmartTimer FillTimer("Fill Timer");
    std::vector<double> Values;
-   for(size_t i=0;i<100;++i){
+   for(size_t i=0;i<50;++i){
        Values.push_back(((double)i)*1.2);
        Ftrs.push_back(
-          Comm.AddTask(SumValues,((double)i)*1.2,((double)i)*2.2));
+          MyComm->AddTask(SumValues,((double)i)*1.2,((double)i)*2.2));
    }
    Par::Future<double> Result=
-       Comm.Reduce<double>(Values.begin(),Values.end(),std::plus<double>());
+       MyComm->Reduce<double>(Values.begin(),Values.end(),std::plus<double>());
    Par::Future<bool> AllPrinted=
-       Comm.ForEach<double>(Values.begin(),Values.begin()+3,
+       MyComm->ForEach<double>(Values.begin(),Values.begin()+3,
            std::function<bool(double)>(PrintValue));
    FillTimer.Stop();
    
    double sum=0;
    for(size_t i=0;i<Ftrs.size();i++)sum+=*(Ftrs[i]);
-   std::cout<<*Result<<std::endl;//Should be 5940
+   double TheResult=*Result;
    TotalTimer.Stop();
-   
+   std::cout<<sum<<std::endl;
+   //PARALLEL_ASSERT(abs(sum-5940)<0.01,
+   //     "Thre result of summing our futures from add_tasks was not");
+   PARALLEL_ASSERT(abs(TheResult-1470)<0.01,
+                   "The result of reduction failed to be 5940");
+   std::cout<<"All tests passed!!!!!"<<std::endl;
    std::cout<<FillTimer<<std::endl;
-   std::cout<<TotalTimer<<std::endl;*/
+   std::cout<<TotalTimer<<std::endl;
    return 0;
 }
