@@ -28,11 +28,12 @@ class Environment;
  *   tasks that require simple post processing.  All of the Madness related
  *   operations are wrapped by this interface.
  * 
- *   Note Madness doesn't seem to handle serial correctly, so we take care of
- *   that here.
+ *   Note Madness doesn't seem to handle serial in the way I would like, it
+ *   still spawns a thread, which means we now have two threads.so we take care
+ *   of that here.
  * 
  *   Madness lets us have multiple worlds.  My current thought is: what if we
- *   use this to throttle threads?
+ *   use this to throttle threads?  Best I can tell this is working...
  *
  *
  */
@@ -372,10 +373,11 @@ inline std::ostream& operator<<(std::ostream& os, const Communicator& Comm){
 template<typename Fxn_t,typename...Args>
 Future<typename std::result_of<Fxn_t(Args...)>::type>
 Communicator::AddTask(Fxn_t YourTask,Args... args){
-    if(NThreads()==1)
+    if(NThreads()==1)//We're the one running this task
         return Future<typename std::result_of<Fxn_t(Args...)>::type>(
-                Fxn_t(Args...)
+                YourTask(args...)
                 );
+    //Otherwise stick it in the queue and be done with it
     return Future<typename std::result_of<Fxn_t(Args...)>::type> (
             World_->taskq.add(YourTask,args...));
       }
@@ -385,7 +387,7 @@ template<typename Result_t,typename Itr_t,typename Op_t>
 Future<Result_t> Communicator::Reduce(Itr_t BeginItr, Itr_t EndItr,
                                       const Op_t& Op,size_t Chunk){
     if(NThreads()==1){
-        Result_t Sum();
+        Result_t Sum=Result_t();
         for(;BeginItr!=EndItr;++BeginItr)
             Sum=Op(Sum,*BeginItr);
         return Future<Result_t>(Sum);

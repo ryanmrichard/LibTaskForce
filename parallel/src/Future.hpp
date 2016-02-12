@@ -10,7 +10,7 @@ namespace LibTaskForce{
 /** \brief A class that holds a future result
  *
  *  When you put a task into a queue you are given a Future to that task's
- *  return instance.  So if you have a task (a function pointer or functor),
+ *  return instance.  So if you have a task (a functor),
  *  that when called with a bunch of doubles as arguments, returns their sum you
  *  would get a Future<double> instance back.  The double
  *  wrapped in that instance would be the sum.  Of course, if your task hasn't
@@ -25,7 +25,9 @@ namespace LibTaskForce{
  *  the class dereference operator [operator->()] to access it's members.  You
  *  can make multiple Futures point to the same result using assignment or
  *  copying.  It is recommended that your returned object be light weight or
- *  a smart pointer because the future owns the memory.
+ *  a smart pointer because the future owns the memory and you'll have to copy
+ *  the result out (this is a necessary complication from the nature of the
+ *  underlying parallelism).
  *
  *  It's important to realize that once you have called either operator*()
  *  or operator->() you are stuck in that call until it can return, i.e. your
