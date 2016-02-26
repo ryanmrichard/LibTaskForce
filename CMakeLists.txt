@@ -13,8 +13,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 add_subdirectory(external)
-ExternalProject_Add(parallel_core
-                    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/parallel
+ExternalProject_Add(taskforce_core
+                    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/taskforce
                     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
                                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                                -DDESTDIR=${CMAKE_BINARY_DIR}/stage
@@ -27,5 +27,5 @@ ExternalProject_Add(parallel_core
                                -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
                     INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install DESTDIR=${CMAKE_BINARY_DIR}/stage
 )
-add_dependencies(parallel_core madness_external)
+add_dependencies(taskforce_core madness_external)
 install(DIRECTORY ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/ DESTINATION ${CMAKE_INSTALL_PREFIX} USE_SOURCE_PERMISSIONS)

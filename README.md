@@ -5,11 +5,18 @@ LibTaskForce is a wrapper around the Madness library that makes it easier to
 use.  In particular, I find Madness's documentation insufficient, especially
 for people who are not terribly C++ savvy.  Consequentially, a large goal of
 the current project is just to provide a user friendly library complete with
-user friendly documentation.
+user friendly documentation.  
+
+The second goal is to extend Madness's task based, threaded parallelism to
+distributed parallelism.  In my experience, one often wants one's coarse-grained
+parallelism to be distributed parallelism, if it is present, or threaded
+parallelism otherwise.  Rather than have to write two codes, the decision is
+offloaded to this library which tracks the available resources for each type of
+parallelism.
 
 # Task vs. Data Parallelism
 For the most part any parallel task can be categorized as either task-based or
-data-based.  The distinction is whether we are applying the same operation to
+data-based.  The distinction is whether we are applying the operations to
 lots of little data sets (task-based) or one operation to one large data set
 (data-based).  In electronic structure theory a finite-difference computation of
 the geometric gradient is an example of the task-based (we have lots of 
@@ -29,7 +36,7 @@ libraries it should be possible to parallelize any routine with minimal effort.
 # Concepts
 These are the fundamental concepts we need you to know:
 
-- Task: Some operation and one associated input data.  For the
+- Task: Some operation and one associated input data set.  For the
         finite-difference example above, the actual task would be the function
         that computes the energy and one geometry for which the energy will be
         computed.
@@ -71,6 +78,12 @@ These are the fundamental concepts we need you to know:
             threading support already so you may have to adjust the number of
             threads this library uses so that you are not oversubscribing.
 
+# What This Library Does
+
+Say we have to run a function with a lot of different inputs.  What this library
+does is take all those inputs and run them in a hybrid MPI/threaded fashion, 
+with the exact process/thread breakdown being (somewhat) tunable. 
+
 # Usage
 
 ```C++
@@ -86,7 +99,6 @@ class MyOperation{
 
 //This is our environment, i.e. all the resources and their current allocations
 //Your program should have one sitting around, use it
-//(how you actually get this is not shown here)
 Environment Env;
 
 //Get a communicator, which is our liason to the environment
@@ -94,8 +106,8 @@ Environment Env;
 //Copy, Assignment, and Moving are prohibited
 const Communicator& CurrentComm=Env.Comm();
 
-//Now we need tasks to run, our function, in this example it
-//takes pairs of doubles, so we put every pair we care about in a vector
+//Now we need tasks to run, our function in this example will
+//take pairs of doubles. We put every pair we care about in a vector
 //(the actual filling is not shown here)
 std::vector<std::pair<double,double>> DataSets;
 
@@ -108,12 +120,15 @@ std::vector<Future<double>> Results;
 //arguments, but by default it will schedule 
 //(number of processes)*(threads per process) tasks, which we assume is what
 //we presently want.  Like "CurrentComm", "NewComm" can not be copied,
-//moved, or assigned.  We return it to you in a const unique_ptr so that when
-//you are done with the resources ("NewComm" goes out of scope), the
-//resources will be added back into the pool
-const std::unique_ptr<Communicator> NewComm=CurrentComm.Split();
+//moved, or assigned.  When you are done with the resources ("NewComm" goes out
+// of scope), the resources will be added back into the pool
+Communicator NewComm=CurrentComm.Split();
 
 //Now we just add our tasks (using the C++11 range-based for-loop)
+//Note that we are not doing anything special for the MPI, specifically we are
+//not blocking some processes from reaching this function.  In fact, AddTask(),
+//assumes that all MPI processes that exist on "CurrentComm" will call AddTask
+//with each task.
 for(const std::pair<double,double>& Data : DataSets)
    Results.push_back(NewComm.AddTask(MyOperation,Data.first,Data.second));
 
@@ -130,40 +145,101 @@ for(size_t i=0;i<Results.size();i++)
 We can get a lot more fancy.  Only using parts of the resources available, 
 performing "reductions" on our data set, adding tasks in a "foreach" fashion.
 
+Disclaimer: reductions are not working at the moment (and since foreach is a
+wrapper around reduction it's also not working).
 
-# In Depth Strategy
+\TODO: Make reductions work
 
-This section focuses on how we secured the same interface for both MPI and 
-threading.  As far as I can tell Madness does not do this by default.
-The general idea is all calls go through one of the three ways of registering
-tasks: manually via AddTask, via Reduce, or via ForEach.  In Madness, these
-functions are tied to a thread queue.  We therefore need to implement the
-correct MPI logic over the threading.  By default we assume each task requires
-one thread, this means we simply assign the tasks, via RoundRobin to each node.
-That node then adds the task to its task queue.  
+# Building the Library
+Now that you know how awesome the library is you probably want to build it.
+That should be pretty easy (in the top-level directory):
 
-If each task requires more than one thread, we make a new Madness world that has
-floor(N/n) threads where N is the total number of threads per node and n is the 
-number of threads each task wants.  We then proceed as above. How/why this works
-is best shown by example.  Consider N=6 and n=2.  Normally, Madness thinks it
-has 6 threads to work with, but now we throttle that down to 3.  Each task is
-then scheduled on one of those three threads.  When a task runs it may then
-spawn 1 additional thread (it itself is already a valid thread that shouldn't
-be wasted).  Thus we have three groups of two threads running, in agreement
-with the user specification.
+```bash
+cmake -H. -Bbuild
+cd build && make
+make install
+```
 
-If each task requires more than one MPI process we then split the current MPI
-communicator into ceil(M/m) communicators, where M is the total number of
-processes we have and m is the number each task wants.  How this breaks down at
-the thread level is a bit tricky.  We take the stance that requiring more
-than one MPI process means you actually need m*N threads per task.  If it
-required less threads then there was no point to require m processes.  For
-example consider m=2 and n=1.  What you are saying is that each task requires
-one thread, or that it requires 1/N of the resources on each node, but then you 
-say each task requires two processes, meaning it needs all the resources 
-available to both nodes.  These are inconsistent statements.  Admittedly there
-is an implicit assumption here: process maps to node.  If process maps to
-thread then the logic appears to break down; however, in such a scenario N
-actually equals 1 and thus you are requesting 2*1 threads, which is consistent
-with our original assumption.  It is straightforward to show that this is also
-true for intermittent process to thread mappings.
+Of course if your compilers etc. are not in the typical places you'll need to
+set the appropriate variables.
+
+```bash
+#Useful environment variables:
+
+CXX=<Path to your C++ compiler>
+CC=<Path to your C compiler>
+
+#Useful CMake variables (pass to cmake with -D<name of variable>:
+
+MPI_C_COMPILER=<Path to the MPI wrapper around the compiler set to CC>
+MPI_CXX_COMPILER=<Path to the MPI wrapper around the compiler set to CXX>
+CMAKE_BUILD_TYPE=Debug #or Release
+
+
+
+
+# Advanced Usage/Topics
+
+## TaskResult Object
+The above example should work, but it's going to be very ineffiecent in terms of
+communication because each MPI process is going to send its data to every other
+MPI process for every element in the `Results`.  Instead if you replace:
+
+```C++
+std::vector<Future<double>> Results;
+```
+
+with:
+
+```C++
+TaskResults<double> Results;
+```
+
+The communication will be far more reasonable (two gathers and a broadcast.  The
+first gather is for the number of elements each process ran, the next grabs the
+elements via gatherv, and then the broadcast gives them to you).
+
+## Controlling Resources
+
+`Split()` allows you to set the maximum number of process/threads each task 
+gets.  For example, if you want to give each task 2 MPI processes the syntax is:
+
+```C++
+Communicator NewComm=CurrentComm.Split(CurrentComm.NThreads(),2);
+```
+
+The first argument is the number of threads each process gets.  In this case
+we are giving each process all of the threads on the node.  The second argument
+is the number of processes for each task.  
+
+Disclaimer: at the moment, the first argument is ignored because the second is
+greater than 1.  I have decided that since your task is using multiple MPI
+processes you have to finish divvying them up before you can start divvying up
+threads.  This means I will always give you all the threads if you request more
+than one MPI process per task.
+
+If you wanted more than one thread per task the syntax would be:
+
+```C++
+Communicator NewComm=CurrentComm.Split(2);
+//Could also explicitly fill in the 1 MPI process
+Communicator NewComm=CurrentComm.Split(2,1);//Exactly the same as above
+```
+
+Disclaimer:  Madness keeps the threads in a singleton threadpool.  So there is 
+no way for us to pull threads back from Madness.  If you want to run threads in
+your task I recommend you request `NThreads()` threads per task.
+
+Finally, if you don't want to use all of the MPI processes to run tasks (say
+you have 100 MPI processes available, but 20 tasks to run), you can request that
+only a subset of the processes be used by:
+
+```C++
+Communicator NewComm=CurrentComm.Split(1,1,10);
+```
+
+This call requests that at most 10 of the available processes run your tasks,
+with one task per thread on each of the 10 processes.  Of course you can combine
+these three options to get pretty much any distribution of parallel resources
+you want.
+

@@ -2,12 +2,14 @@
 #define PARALLEL_COMMUNICATOR_HPP_
 
 #include <type_traits> //For std::result_of
-#include <mpi.h> //For MPI_COMM
+#include <mpi.h> //For MPI_Comm
 #include "Future.hpp"
 #include "madness/world/MADworld.h"
+#include "CommStats.hpp"
 namespace LibTaskForce{
     
 class Environment;
+class CommStats;
 
 /** \brief Class that handles interactions with the parallel environment
  *
@@ -34,6 +36,15 @@ class Environment;
  * 
  *   Madness lets us have multiple worlds.  My current thought is: what if we
  *   use this to throttle threads?  Best I can tell this is working...
+ * 
+ *   The last trick is how to do the MPI behind the guise of the future.  
+ *   There's two real scenarios: every task is running on one MPI process or
+ *   every task involves multiple MPI processes.  Runs not using MPI fall under
+ *   the former.  In the former, we need to determine if we are running a
+ *   given task, if we aren't than we make a future that knows who is, otherwise
+ *   we add the task to our pool.
+ * 
+ *   
  *
  *
  */
@@ -73,9 +84,16 @@ class Communicator{
        *  Note: This ultimately calls Madness, which has a 9 argument limit.
        *  If you need more than 9 arguments consider
        *  using a tuple as one of the arguments, or some other container.
+       * 
+       *  Also note that if you run with MPI the result may be communicated
+       *  among processes
        */
       template<typename Fxn_t,typename...Args>
-      Future<typename std::result_of<Fxn_t(Args...)>::type>
+      Future<
+        typename RemoveFuture<
+            typename std::result_of<Fxn_t(Args...)>::type
+                 >::type
+      >
       AddTask(Fxn_t YourTask,Args... args);
       
       /** \brief Applies a given operation to every piece of data in the range
@@ -87,23 +105,26 @@ class Communicator{
        *   can be done asynchronously.  We of course don't want to be restricted
        *   to only doubles, so this function is templated on the type of the
        *   objects we are reducing.  In general we will call that type: Result_t
-       * 
-
-       *   
-       * 
        *   Of course you don't always want to add things up.  Sometimes you want
-       *   to subtract, etc.  In general you need to provide me an operation
-       *   with the signature:
+       *   to subtract, etc.  In general you need to provide me a visitor (a
+       *   functor with multiple methods) with the following functions:
        *   \code
-       *   Result_t Op(const Result_t&,const Result_t&);
+          class Operation{
+               public:
+                //Must be copyable
+                 Operation(const Operation&)=default;
+                 //Must be default constructable
+                OpWrapper()=default;
+                //Allows you to do something given your iterator's current
+                //value
+                 Result_t operator()(const Itr_t& Itr)const;
+                //The operation that will combine two Result_t's
+                 Result_t operator()(const Result_t& lhs,
+                                    const Result_t& rhs)const;
+            };
        *   \endcode
-       *   The basic std operations: plus,minus,multiplies,divides, modulus,
-       *   equal_to,not_equal_to,greater,less,greater_equal,less_equal,
-       *   logical_and, logical_or, bit_and, and bit_or all satisfy this
-       *   signature so long as you have the appropriate operator defined
-       *   for an object of type Result_t.
        * 
-       *   A typical use of this function looks something like:
+       *   To add the sum of the squares of a series of values:
        * 
        *   \code
        *   //Get a communicator somehow
@@ -112,16 +133,24 @@ class Communicator{
        *   //Make a vector filled with the numbers 1 to 100
        *   std::vector<double> Values;
        * 
-       *   //If we are adding them up:
+       *   //You can declare a class inline, if you didn't know
+       *   class MySumOfSquares{
+       *      public:
+       *         MySumOfSquares(const MySumOfSquares&)=default;
+       *         MySumOfSquares()=default;
+       *         double operator()(const std::vector<double>::iterator& lhs)
+       *           const{return (*lhs)*(*lhs);}
+       *         double operator()(double lhs,double rhs)const{
+       *             return lhs+rhs;
+       *         }
+       *   };
+       * 
+       *   //Now perform the operation
        *   Future<double>=Comm.Reduce<double>(Values.begin(),
        *                                      Values.end(),
-       *                                       std::plus<double>());
+       *                                       MySumOfSquares());
        *   \endcode
-       *   Note that Reduce takes one template argument, which is the return
-       *   type.
        *
-       *   \param[in] Result_t The type of both the objects we are reducing and
-       *                       the object we are returning.
        *   \param[in] BeginItr An iterator to the beginning of the range of
        *                       objects we are iterating over
        *   \param[in] EndItr   An iterator to the end of the range we are
@@ -156,11 +185,12 @@ class Communicator{
        *   where result is  of type Result_t and itr is an iterator to a range
        *   of elements of type Result_t.  Presently we build a small wrapper
        *   class inside this function that handles these semantics.  The user
-       *   should not have to worry about this. 
+       *   should not have to worry about this. We mirror this behavior at
+       *   the MPI level
        */
       template<typename Result_t,typename Itr_t,typename Op_t>
-      Future<Result_t> Reduce(Itr_t BeginItr, Itr_t EndItr,
-                              const Op_t& Op,size_t ChunkSize=1);
+      Future<typename RemoveFuture<Result_t>::type> 
+        Reduce(Itr_t BeginItr, Itr_t EndItr,const Op_t& Op,size_t ChunkSize=1);
       
       
       /** \brief This function performs the same function on each instance in
@@ -186,18 +216,17 @@ class Communicator{
        *  //Get a vector of values
        *  std::vector<double> SomeValues;
        * 
-       *  //Define a function
-       *  bool MyFxn(const double& value){
+       *  //Define a function that takes an iterator
+       *  bool MyFxn(const std::vector<double>::iterator& value){
        *     //do something with value
        *     return true; 
        *  }
        * 
        *  //Here we use std::function to turn a function into a functor
-       *  Comm.ForEach<double>(SomeValues.begin(),SomeValues.end(),
+       *  Comm.ForEach(SomeValues.begin(),SomeValues.end(),
        *      std::function<bool(double)>(MyFxn));
        *  \endcode
        * 
-       *  \param[in] Type The type of your objects
        *  \param[in] BeginItr An iterator pointing to the beginning of the range
        *  \param[in] EndItr An iterator pointing to the end of the range
        *  \param[in] Op The operation to be applied to each element in the range
@@ -207,10 +236,11 @@ class Communicator{
        *  in each task.  If your operations are short you likely will want to
        *  put more than one operation into each task.  Once you have your code
        *  working it is straightforward to run it with various chunk sizes and
-       *  see what the optimal value is.
+       *  see what the optimal value is.  This is actually just a wrapper
+       *  to reduce where Result_t is a bool.
        *
        */
-      template<typename Type,typename Itr_t,typename Op_t>
+      template<typename Itr_t,typename Op_t>
       Future<bool> ForEach(Itr_t BeginItr,Itr_t EndItr,const Op_t& Op,
                            size_t ChunkSize=1);
       
@@ -306,7 +336,7 @@ class Communicator{
        *                 processes. Must be in range [0,M]
        * 
        */
-      const std::unique_ptr<Communicator> Split(size_t n=1, 
+      Communicator Split(size_t n=1, 
                                           size_t m=1,
                                           size_t Maxm=0)const;
 
@@ -320,6 +350,12 @@ class Communicator{
       ///The number of threads
       size_t NThreads()const{return NThreads_;}
       
+      ///True if the communicator is active, i.e. if you should give it tasks
+      bool IsActive()const;
+      
+      ///Returns the details of the distrubeted parallel setup
+      std::shared_ptr<const CommStats> GetStats()const{return MyStats_;}
+      
       ///This function should be used sparingly, but if you need it this is the
       ///the current MPI_COMM
       MPI_Comm MPIComm()const;
@@ -327,10 +363,11 @@ class Communicator{
       ///You may not assign a communicator
       const Communicator& operator=(const Communicator&)=delete;
       ///You may not delete a communicator
-      Communicator(const Communicator&)=delete;
+      Communicator(const Communicator&)=default;
       ///May not be default constructed
       Communicator()=delete;
-      
+            ///Only Environment and other Communicators may move communicators
+      Communicator(Communicator&&)=default;
       ///Releases the resources owned by this communicator
       ~Communicator();
       
@@ -338,26 +375,48 @@ class Communicator{
       std::string ToString()const;
       
    private:
-      ///The Madness world we are wrapping
-      std::unique_ptr<madness::World> World_;
+      ///The Madness world we are wrapping, represents the resources at our
+      ///disposal
+      std::shared_ptr<madness::World> World_;
       ///The environment we belong to, we don't own it
       Environment* Env_;
       ///The number of threads we own
       const size_t NThreads_;
       
+      ///The distributed parallel nature of this communicator
+      std::shared_ptr<CommStats> MyStats_;
+      
+      /** \brief Keeps track of the tasks that have been added to the queue
+       *
+       *  This value starts at 0 and is incremented every time a task is
+       *  scheduled to run.  It functions like a universal ID for a task
+       *  because tasks need to be added in the same order on all processes.
+       *  As far as worrying about its uniqueness, the maximum unsigned 64-bit
+       *  integer is: 1.845E19.  If we submitted that many nano-second long
+       *  tasks it would take 584 years to run them, so I think we are ok...
+       */
+      size_t TasksAdded_;      
+      
+      bool BarrierOn_=true;
       friend Environment;
-      ///Only Environment and other Communicators may move communicators
-      Communicator(Communicator&&)=default;
+
       
       /** \brief A constructor for making communicators from MPI_Comm's
+       *         This is private to prevent people from going around our
+       *         resource management.
        * 
        *  \param[in] NThreads The number of threads this comm owns
        *  \param[in] Comm The MPI_Comm we are building this on
        *  \param[in] Env  The environment we are part of
        *  \param[in] Control True if we are taking ownership of the MPI_Comm
+       *  \param[in] Stats How processes are divided up.  Null makes it so that
+       *             only threading is used.
+       *  \param[in] Register Should we register this communicator with the
+       *                       Env.  (Needed to prevent infinite recursion)
        */
-      Communicator(size_t NThreads,const MPI_Comm& Comm,
-                      Environment* Env,bool Control=false);
+      Communicator(size_t NThreads,const MPI_Comm& Comm, Environment* Env,
+                   bool Control=false,CommStats* Stats=nullptr,
+                   bool Register=false);
       ///Registers the communicator with Env_ (only call once)
       void Register();
       ///Releases the communicator from Env_ (only call once)
@@ -371,58 +430,126 @@ inline std::ostream& operator<<(std::ostream& os, const Communicator& Comm){
 }
 
 template<typename Fxn_t,typename...Args>
-Future<typename std::result_of<Fxn_t(Args...)>::type>
+Future<
+    typename RemoveFuture<
+        typename std::result_of<Fxn_t(Args...)>::type
+    >::type
+>
 Communicator::AddTask(Fxn_t YourTask,Args... args){
-    if(NThreads()==1)//We're the one running this task
-        return Future<typename std::result_of<Fxn_t(Args...)>::type>(
-                YourTask(args...)
-                );
-    //Otherwise stick it in the queue and be done with it
-    return Future<typename std::result_of<Fxn_t(Args...)>::type> (
-            World_->taskq.add(YourTask,args...));
-      }
-
-
-template<typename Result_t,typename Itr_t,typename Op_t>
-Future<Result_t> Communicator::Reduce(Itr_t BeginItr, Itr_t EndItr,
-                                      const Op_t& Op,size_t Chunk){
-    if(NThreads()==1){
-        Result_t Sum=Result_t();
-        for(;BeginItr!=EndItr;++BeginItr)
-            Sum=Op(Sum,*BeginItr);
-        return Future<Result_t>(Sum);
+    typedef typename std::result_of<Fxn_t(Args...)>::type RealType_t;
+    typedef typename RemoveFuture<RealType_t>::type Result_t;
+    size_t TaskOwner=MyStats_->WhoRanTask(TasksAdded_);
+    bool ImActive=MyStats_->Active(),MyTask=MyStats_->MyTask(TasksAdded_);
+    Future<Result_t> Rvalue;
+    //If I'm not running tasks, or if this isn't my problem I just return a
+    //future
+    if(!ImActive||!MyTask){
+        Rvalue=Future<Result_t>(GetStats(),TasksAdded_++);
     }
+    else if(NThreads()==1){//We're the only one running tasks...
+        RealType_t Temp=YourTask(args...);
+        Result_t Temp2=GetValue<Result_t>(Temp);
+        Rvalue=Future<Result_t>(GetStats(),TasksAdded_++,Temp2);
+    }
+    else{ //Otherwise stick it in the queue and be done with it
+        madness::Future<RealType_t> Value=World_->taskq.add(YourTask,args...);
+        //Here's the trick if RealType_t is a Future we need to add a task that
+        //dereferences it to the queue, the result of which is the actual value
+        madness::Future<Result_t> RealValue;
+        if(IsFuture<RealType_t>::value){
+            std::function<Result_t(RealType_t)> fxn=[](RealType_t in){
+                return GetValue<Result_t>(in);
+            };
+            RealValue=World_->taskq.add(fxn,Value);
+        }
+        else RealValue=ToMadFuture<Result_t>(Value);
+        Rvalue=Future<Result_t>(GetStats(),TasksAdded_++,RealValue); 
+    }
+    //Need to wait for all processes to add the task or else they may get ahead
+    //and request the task from a remote process, before that remote process
+    //has gone through here.  For one thread there won't be any active messages
+    //so this doesn't apply, plus the barrier makes the MPI processes wait even
+    //if it's not their task
+    if(NThreads()!=1)Barrier();
+    return Rvalue;
+  }
+
+
+template<typename ResultIn_t,typename Itr_t,typename Op_t>
+Future<typename RemoveFuture<ResultIn_t>::type> Communicator::Reduce(Itr_t BeginItr, Itr_t EndItr,
+                                      const Op_t& Op,size_t Chunk){
+    typedef typename RemoveFuture<ResultIn_t>::type Result_t;
+    Future<Result_t> RValue;
+    /*bool BarrierStatus=BarrierOn_;
+    BarrierOn_=false;
+    bool ImActive=MyStats_->Active(),MyTask=MyStats_->MyTask(TasksAdded_);
+
+    size_t Distance=std::distance(BeginItr,EndItr);
+    if(Distance>Chunk){//We have work to do...
+        //All processes need to go through this logic so that the TasksAdded_ 
+        //line up
     
-    class OpWrapper{
-        private:
-            Op_t Op_;
-        public:
-            OpWrapper(const Op_t& Op):Op_(Op){}  
-            OpWrapper(const OpWrapper&)=default;
-            OpWrapper()=default;
-              
-            Result_t operator()(const Itr_t& Itr)const{return *Itr;}
-              
-            Result_t operator()(const Result_t& lhs,const Result_t& rhs)const{
-                return Op_(rhs,lhs);
-            }
-    };
-          
-    return Future<Result_t>(
-        World_->taskq.reduce<Result_t>(madness::Range<Itr_t>(BeginItr,EndItr,Chunk),
-         OpWrapper(Op))
-    );
+        //Split the range and run recursively (TasksAdded_ updated in AddTask)
+    
+        *   Assume we had 9 tasks in a vector
+        *   {1,2,3,4,5,6,7,8,9}
+        *   Distance will be 9, hence Distance%2=1 and we are
+        *   advancing the begin iterator by 4.  It originally pointed
+        *   to 1, now it points to 5.  Thus the LSum will entail 4 values and
+        *   the right 5.
+        *
+        Itr_t RHSBegin(BeginItr);
+        std::advance(RHSBegin,(Distance-Distance%2)/2);
+        //Barrier's off...
+        std::function<Future<Result_t>(Itr_t,Itr_t,const Op_t&, size_t)> Fxn=
+                [=](Itr_t Bit,Itr_t Eit,const Op_t& O1, size_t C1){
+                    return this->Reduce<Result_t>(Bit,Eit,O1,C1);
+                 };
+        Future<Result_t> LSum=
+           AddTask(Fxn,BeginItr,RHSBegin,Op,Chunk);
+        Future<Result_t> RSum=
+           AddTask(Fxn,RHSBegin,EndItr,Op,Chunk);
+        //Use a proxy to keep the asynch going...
+        class ReduceProxy{
+            private:
+                Op_t Op_;
+            public:
+                ReduceProxy(const Op_t& OpIn):Op_(OpIn){}
+                Result_t operator()(Future<Result_t> LHS, 
+                                    Future<Result_t> RHS)const{
+                return Op_(*LHS,*RHS);
+                }
+        };
+        RValue=AddTask(ReduceProxy(Op),LSum,RSum);
+    }
+    else{
+        if(!ImActive||!MyTask)
+            RValue=Future<Result_t>(GetStats(),TasksAdded_++);
+        else if(NThreads()==1){//Don't call Madness or it will spawn a thread
+            Result_t Sum=Result_t();
+            for(;BeginItr!=EndItr;++BeginItr)
+                Sum=Op(Sum,Op(BeginItr));
+            RValue=Future<Result_t>(GetStats(),TasksAdded_++,Sum);
+        }
+        else{//Madness takes over now
+            RValue=Future<Result_t>(GetStats(),TasksAdded_++,
+                World_->taskq.reduce<Result_t>(
+                    madness::Range<Itr_t>(BeginItr,EndItr,Chunk),Op
+                )
+            );       
+        }
+    }
+    //Need barrier for same reason we needed it in AddTask,but need to be
+    //careful with the recursion...
+    //If we turned it off, turn it on
+    if(BarrierStatus)BarrierOn_=true;
+    if(NThreads()!=1)Barrier();*/
+    return RValue;
 }
 
-template<typename Type,typename Itr_t,typename Op_t>
+template<typename Itr_t,typename Op_t>
 Future<bool> Communicator::ForEach(Itr_t BeginItr,Itr_t EndItr,const Op_t& Op,
                      size_t ChunkSize){
-    if(NThreads()==1){
-        bool success=true;
-        for(;BeginItr!=EndItr;++BeginItr)
-            success=(success && Op(*BeginItr));
-        return Future<bool>(success);
-    }
     class OpWrapper{
         private:
             Op_t Op_;
@@ -432,11 +559,16 @@ Future<bool> Communicator::ForEach(Itr_t BeginItr,Itr_t EndItr,const Op_t& Op,
             bool operator()(const Itr_t& Itr)const{
                return Op_(*Itr);
             }
+            bool operator()(bool lhs,bool rhs)const{
+                //We cheat since bool defaults to 0 and any non-zero value is
+                //true (cheat required because reduce will default initialize
+                //the first value and false && anything= false)
+                size_t NewLhs=static_cast<size_t>(lhs);
+                size_t NewRhs=static_cast<size_t>(rhs);
+                return static_cast<bool>(NewLhs + NewRhs);
+            }
     };
-    return Future<bool>(World_->taskq.for_each(
-             madness::Range<Itr_t>(BeginItr,EndItr,ChunkSize),
-             OpWrapper(Op))
-           );
+    return Reduce<bool>(BeginItr,EndItr,OpWrapper(Op),ChunkSize);
 }
 
 
