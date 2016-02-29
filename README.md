@@ -173,6 +173,7 @@ CC=<Path to your C compiler>
 
 MPI_C_COMPILER=<Path to the MPI wrapper around the compiler set to CC>
 MPI_CXX_COMPILER=<Path to the MPI wrapper around the compiler set to CXX>
+PYTHON_EXECUTABLE=<Path to a python executable> #Required for Madness dependency
 CMAKE_BUILD_TYPE=Debug #or Release
 ```
 
