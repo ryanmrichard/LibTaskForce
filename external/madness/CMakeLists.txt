@@ -27,7 +27,7 @@ ExternalProject_Add(madness_external
    -DENABLE_UNITTESTS=FALSE
    CMAKE_CACHE_ARGS -DLAPACK_LIBRARIES:STRING=${BPMODULE_MATH_LIBS}
    BUILD_COMMAND ${CMAKE_COMMAND} --build . --target MADworld
-   INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install-common install-world install-config DESTDIR=${CMAKE_BINARY_DIR}/stage
+   INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install-clapack install-common install-world install-config DESTDIR=${CMAKE_BINARY_DIR}/stage
 )
 else()
    add_library(madness_external INTERFACE)
