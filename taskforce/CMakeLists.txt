@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 list(APPEND CMAKE_PREFIX_PATH "${DESTDIR}/${CMAKE_INSTALL_PREFIX}/external/madness")
 find_package(MPI REQUIRED)
-find_package(MADNESS REQUIRED CONFIG COMPONENTS world)
+find_package(MADNESS REQUIRED COMPONENTS world)
 
 add_subdirectory(src)
 add_subdirectory(include)
