@@ -8,7 +8,6 @@ find_package(MPI REQUIRED)
 #We require C++11
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-   message(STATUS "Debug mode active")
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 endif()
 
