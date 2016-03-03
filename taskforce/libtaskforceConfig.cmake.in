@@ -1,3 +1,13 @@
+################################################################################
+#                                                                              #
+# TASKFORCE_LIBRARY will be the path to libtaskforce.so                        #
+# TASKFORCE_LIBRARIES will be the path to libtaskforce and its dependencies    #
+# TASKFORCE_INCLUDE_DIR will be the path to libtaskforce's include files       #
+# TASKFORCE_INCLUDE_DIRS will be the path to libtaskforce and its dependencies #
+#                        header files                                          #
+#                                                                              #
+################################################################################
+
 # Modules are created without a prefix
 set(CMAKE_SHARED_MODULE_PREFIX "")
 
@@ -29,3 +39,6 @@ target_include_directories(taskforce INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include
 list(APPEND TASKFORCE_CXX_INCLUDES @MPI_CXX_INCLUDE_PATH@)
 list(APPEND TASKFORCE_CXX_INCLUDES ${MADNESS_INCLUDE_DIRS})
 target_include_directories(taskforce SYSTEM INTERFACE ${TASKFORCE_CXX_INCLUDES})
+list(APPEND TASKFORCE_LIBRARY ${CMAKE_CURRENT_LIST_DIR}/lib/libtaskforce.so)
+list(APPEND TASKFORCE_LIBRARIES ${TASKFORCE_LIBRARY} ${MADNESS_LIBRARIES})
+
