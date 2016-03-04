@@ -1,0 +1,38 @@
+################################################################################
+#                                                                              #
+# LIBTASKFORCE_LIBRARY will be the path to libtaskforce.so                     #
+# LIBTASKFORCE_LIBRARIES will be the path to libtaskforce and its dependencies #
+# LIBTASKFORCE_INCLUDE_DIR will be the path to libtaskforce's include files    #
+# LIBTASKFORCE_INCLUDE_DIRS will be the path to libtaskforce and its           #
+#                           dependencies header files                          #
+#                                                                              #
+################################################################################
+
+# Modules are created without a prefix
+set(CMAKE_SHARED_MODULE_PREFIX "")
+
+set(LIBTASKFORCE_EXTERNAL_DIR "${CMAKE_CURRENT_LIST_DIR}/external")
+list(APPEND CMAKE_PREFIX_PATH "${LIBTASKFORCE_EXTERNAL_DIR}/madness")
+
+# Find external projects
+find_package(MADNESS REQUIRED CONFIG COMPONENTS world)
+
+# Create the target to link against
+add_library(libtaskforce INTERFACE)
+
+# Required options
+target_compile_options(libtaskforce INTERFACE "-std=c++11")
+
+
+#######################################
+# Add the various include directories
+#######################################
+# Main LibTaskForce headers
+list(APPEND LIBTASKFORCE_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
+list(APPEND LIBTASKFORCE_INCLUDE_DIRS ${LIBTASKFORCE_INCLUDE_DIR})
+list(APPEND LIBTASKFORCE_INCLUDE_DIRS @MPI_CXX_INCLUDE_PATH@)
+list(APPEND LIBTASKFORCE_INCLUDE_DIRS ${MADNESS_INCLUDE_DIRS})
+
+target_include_directories(libtaskforce SYSTEM INTERFACE ${LIBTASKFORCE_INCLUDE_DIRS})
+list(APPEND TASKFORCE_LIBRARY taskforce)
+list(APPEND TASKFORCE_LIBRARIES ${TASKFORCE_LIBRARY} ${MADNESS_LIBRARIES})

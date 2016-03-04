@@ -1,12 +1,12 @@
-set(ParallelHeaders CommStats.hpp
+set(LibTaskForceHeaders CommStats.hpp
                     Communicator.hpp
                     DVector.hpp
                     Environment.hpp
                     Future.hpp
-                    LibParallel.hpp
+                    LibTaskForce.hpp
                     MadnessHelper.hpp
                     ParallelAssert.hpp
                     TaskResults.hpp
                     Timer.hpp
 )
-install(FILES ${ParallelHeaders} DESTINATION include)
+install(FILES ${LibTaskForceHeaders} DESTINATION include)

@@ -7,5 +7,6 @@ find_package(MADNESS REQUIRED COMPONENTS world)
 add_subdirectory(src)
 add_subdirectory(include)
 add_subdirectory(test)
+
 configure_file("libtaskforceConfig.cmake.in" "libtaskforceConfig.cmake" @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/libtaskforceConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
