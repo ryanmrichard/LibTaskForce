@@ -2,6 +2,7 @@
 #define PARALLEL_ENVIRONMENT_HPP_
 
 #include<stack>
+#include<memory>
 #include <mpi.h>
 namespace LibTaskForce{
 
