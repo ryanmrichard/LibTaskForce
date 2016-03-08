@@ -386,6 +386,9 @@ class Communicator{
       ///The distributed parallel nature of this communicator
       std::shared_ptr<CommStats> MyStats_;
       
+      ///Was this communicator registered (needed b/c of recursion see Env)
+      bool Registered_;
+            
       /** \brief Keeps track of the tasks that have been added to the queue
        *
        *  This value starts at 0 and is incremented every time a task is
@@ -398,6 +401,7 @@ class Communicator{
       size_t TasksAdded_;      
       
       bool BarrierOn_=true;
+
       friend Environment;
 
       

@@ -10,7 +10,7 @@ Communicator::Communicator(size_t NThreads,const MPI_Comm& Comm,
                            Environment* Env,bool Control,CommStats* Stats,
                            bool Register):
                       Env_(Env),NThreads_(NThreads),TasksAdded_(0),
-                      MyStats_(Stats){
+                      MyStats_(Stats),Registered_(Register){
     PARALLEL_ASSERT(NThreads>0,
                     "Requested number of threads must be greater than 0"
     );
@@ -18,7 +18,7 @@ Communicator::Communicator(size_t NThreads,const MPI_Comm& Comm,
     World_=std::unique_ptr<madness::World>(new madness::World(
               SafeMPI::Intracomm(Comm,Control)
            ));
-    if(Register)this->Register();
+    if(Registered_)this->Register();
 }    
   
 /*Communicator::Communicator(madness::World world, Environment* Env):
@@ -121,8 +121,9 @@ std::string Communicator::ToString()const{
 
 
 Communicator::~Communicator(){
-    Release();
+    if(Registered_)Release();
     Env_=nullptr;
+    std::cout<<"I am released"<<std::endl;
 }
 
 }//End namespaces

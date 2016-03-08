@@ -11,7 +11,7 @@ Environment::Environment(size_t NThreads):
     Environment(NThreads,MPI_COMM_WORLD){}
 
 Environment::Environment(size_t NThreads,const MPI_Comm& Comm):
-    NThreads_(NThreads),PopLock_(true){
+    NThreads_(NThreads){
     PARALLEL_ASSERT(NThreads>0,
       "The number of threads must be greater than 0");
    SetMadThreads(NThreads);
@@ -36,24 +36,23 @@ Environment::~Environment(){
     Comms_.top()->Barrier();
     Comms_.pop();
     
-   //Really should check if this has been called,
-   //but madness doesn't seem to support that
-   madness::finalize();
+   //If madness::finalize() has been called the condition is false
+   if(madness::initialized())madness::finalize();
 }
 
 void Environment::Release(const Communicator& Comm2Release){
-    if(PopLock_&&Comms_.size()>1){//Don't pop world
+    if(Comms_.size()>1){//Don't pop world
         PARALLEL_ASSERT(ParentComm_.top()==&Comm2Release,
            "Comms are not getting removed in the order I thought..."
         );
         ParentComm_.pop();
         Comms_.pop();
     }
-    //Only every other call to this function releases
-    PopLock_=!PopLock_;
 }
 
 void Environment::Register(const Communicator& Comm2Register){
+    PARALLEL_ASSERT(Comms_.top()->NThreads()>=Comm2Register.NThreads(),
+                    "You requested more threads than you have");
     size_t NewThreads=Comms_.top()->NThreads()-Comm2Register.NThreads();
     Comms_.push(Comm_t(
        new Communicator(

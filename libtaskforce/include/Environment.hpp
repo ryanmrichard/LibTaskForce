@@ -107,11 +107,12 @@ class Environment{
        *  out on subsequent calls to Comm().
        * 
        *  The new communicator literally is the number of processes on what
-       *  I think is the current comm, less those on the Comm2Register and
+       *  was the current comm, less those on the Comm2Register and
        *  the number of threads on the current comm less the number on
        *  Comm2Register.  MPI really helps us out here because the intracomm
        *  inside Comm2Register is the active MPI comm all we have to do is
-       *  worry about the threads.
+       *  worry about the threads.  Only the comm that is split off is 
+       *  registered, it is also responsible for remembering to call release.
        */
       void Register(const Communicator& Comm2Register);
       /** \brief Adds the resources back into the environment
@@ -120,20 +121,10 @@ class Environment{
        *  just pop the last communicator off the stack, and if we are in
        *  debug mode, make sure no one kept a communicator out.  
        * 
-       *  Implementation note:  At first this function's guts may look weird,
-       *  but consider how work flows evolve.  We start with some MPI_COMM,
-       *  likely MPI_COMM_WORLD, that we don't own.  We call it Comm A.  Next 
-       *  someone splits that  comm, resulting in what we call Comm B.  In the
-       *  register call, we push back a comm, Comm C, that is the
-       *  difference between Comm A and Comm B.  We store the address of Comm B.
-       *  Now when Comm B goes out of scope it calls release, we compare its
-       *  address to the top of ParentComms_, if they match we pop Comm C off
-       *  the stack.  Now comes the catch, when we pop Comm C off it's going
-       *  to call release also.  We don't want to pop another comm off so
+       *  Any comm that was registered should call this function upon deletion
        */
       void Release(const Communicator& Comm2Release);
-      
-      bool PopLock_;
+
       
       
       
