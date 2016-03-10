@@ -193,7 +193,7 @@ namespace LibTaskForce {
         //Now we implement a sort of gatherv
         //\todo Can this be written both serialized and with gatherv?
         for (int i = 0; i < NProcs; ++i) {
-            if (AmIRoot)Offsets[i] == FullResults.size();
+            if (AmIRoot)Offsets[i] = FullResults.size();
             if (i == Root) {
                 if (AmIRoot)
                     FullResults.insert(FullResults.end(),
