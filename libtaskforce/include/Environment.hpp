@@ -85,6 +85,7 @@ class Environment{
        *           parallel environment.
        */
       const Communicator& Comm()const;
+      std::string Print()const;
    private:
       ///The number of threads the program was started with
       const size_t NThreads_;
@@ -99,6 +100,7 @@ class Environment{
       
       ///Allows communicators to register/release themselves
       friend Communicator;
+      
       /** \brief Registers a newly made Communicator with the environment
        * 
        *  Basically a communicator was split and we now gave up some resources.
@@ -125,11 +127,14 @@ class Environment{
        */
       void Release(const Communicator& Comm2Release);
 
-      
+
       
       
 };
 
+inline std::ostream& operator<<(std::ostream& os, const Environment& Env){
+    return os<<Env.Print();
+}
 
 }//End namespaces
 

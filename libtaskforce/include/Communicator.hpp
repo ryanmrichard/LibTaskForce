@@ -362,11 +362,11 @@ class Communicator{
  
       ///You may not assign a communicator
       const Communicator& operator=(const Communicator&)=delete;
-      ///You may not delete a communicator
-      Communicator(const Communicator&)=default;
+      ///You may not copy a communicator
+      Communicator(const Communicator&)=delete;
       ///May not be default constructed
       Communicator()=delete;
-            ///Only Environment and other Communicators may move communicators
+      ///Comms may be moved, but please don't...
       Communicator(Communicator&&)=default;
       ///Releases the resources owned by this communicator
       ~Communicator();
@@ -398,7 +398,9 @@ class Communicator{
        *  integer is: 1.845E19.  If we submitted that many nano-second long
        *  tasks it would take 584 years to run them, so I think we are ok...
        */
-      size_t TasksAdded_;      
+      size_t TasksAdded_;     
+      
+      size_t MyNum_;
       
       bool BarrierOn_=true;
 
@@ -558,7 +560,7 @@ Future<bool> Communicator::ForEach(Itr_t BeginItr,Itr_t EndItr,const Op_t& Op,
         private:
             Op_t Op_;
         public:
-            OpWrapper(const Op_t& Op):Op_(Op){}
+            OpWrapper(const Op_t& OpIn):Op_(OpIn){}
             OpWrapper(const OpWrapper&)=default;
             bool operator()(const Itr_t& Itr)const{
                return Op_(*Itr);

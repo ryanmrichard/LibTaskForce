@@ -67,5 +67,14 @@ const Communicator& Environment::Comm()const{
                     "This environment doesn't have communicators!!!!");
    return *Comms_.top();
 }
+
+
+std::string Environment::Print()const{
+    std::stringstream ss;
+    ss<<"Environment has "<<Comms_.size()
+      <<" nested communicators at the moment";
+    return ss.str();
+}
+
 }//End namespaces
 

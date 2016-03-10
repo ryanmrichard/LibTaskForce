@@ -45,8 +45,8 @@ class DVector: private madness::WorldObject<DVector<T>>{
         std::shared_ptr<const CommStats> MyStats_;      
         
     public:
-        DVector(madness::World& world,std::shared_ptr<const CommStats> MyStats):
-            Base_t(world),MyStats_(MyStats){Base_t::process_pending();}
+        DVector(madness::World& Aworld,std::shared_ptr<const CommStats> MyStats):
+            Base_t(Aworld),MyStats_(MyStats){Base_t::process_pending();}
         DVector(const DVector<T>&)=default;
         DVector(DVector<T>&&)=default;
         DVector<T>& operator=(const DVector<T>&)=default;
@@ -64,7 +64,8 @@ class DVector: private madness::WorldObject<DVector<T>>{
             if(MyStats_->MyTask(i))data=MyData_.at(i)->get();
             else{
                 Future_t temp=
-                    Base_t::send(MyStats_->WhoRanTask(i),&DVector<T>::Get,i);
+                    Base_t::send((int)(MyStats_->WhoRanTask(i)),
+                                 &DVector<T>::Get,i);
                 data=temp.get();
             }
             return data;

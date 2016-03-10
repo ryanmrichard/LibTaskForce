@@ -4,13 +4,16 @@
 #include "MadnessHelper.hpp"
 #include "ParallelAssert.hpp"
 #include "madness/world/MADworld.h"
+
+static size_t CommNum=0;
+
 namespace LibTaskForce{
 
 Communicator::Communicator(size_t NThreads,const MPI_Comm& Comm,
                            Environment* Env,bool Control,CommStats* Stats,
                            bool Register):
                       Env_(Env),NThreads_(NThreads),TasksAdded_(0),
-                      MyStats_(Stats),Registered_(Register){
+                      MyStats_(Stats),Registered_(Register),MyNum_(CommNum++){
     PARALLEL_ASSERT(NThreads>0,
                     "Requested number of threads must be greater than 0"
     );
@@ -101,7 +104,7 @@ Communicator Communicator::Split(size_t n,
 
     //Here's a cool C++11 trick to retrun non-copyable and non-moveable
     //objects, return just the braced-init-list    
-    return {ThreadsForTasks,MPI_NewComm,Env_,true,MyStats,true};
+    return Communicator(ThreadsForTasks,MPI_NewComm,Env_,true,MyStats,true);
 }
 
 void Communicator::Register(){
@@ -114,8 +117,9 @@ void Communicator::Release(){
 
 std::string Communicator::ToString()const{
     std::stringstream ss;
-    ss<<"Communicator has "<<NProcs()
-      <<" process(es) and "<<NThreads()<<" thread(s).";
+    ss<<"Communicator "<<MyNum_<<" has "<<NProcs()
+      <<" process(es) and "<<NThreads()<<" thread(s) and is"
+      <<(Registered_?"":" not")<<" registered.";
     return ss.str();
 }
 
@@ -123,7 +127,6 @@ std::string Communicator::ToString()const{
 Communicator::~Communicator(){
     if(Registered_)Release();
     Env_=nullptr;
-    std::cout<<"I am released"<<std::endl;
 }
 
 }//End namespaces

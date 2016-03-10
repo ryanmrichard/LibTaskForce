@@ -1,3 +1,6 @@
 [submodule "external/madness/madness-source"]
 	path = external/madness/madness-source
 	url = https://github.com/ryanmrichard/madness
+[submodule "external/cereal/cereal-source"]
+	path = external/cereal/cereal-source
+	url = git@github.com:USCiLab/cereal.git
