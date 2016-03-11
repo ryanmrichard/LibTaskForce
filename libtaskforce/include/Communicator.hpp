@@ -372,6 +372,9 @@ class Communicator{
       template<typename T>
       void Bcast(T& Data,size_t Root=0)const;
       
+      ///Splits the MPI_Comm inside this communicator (I strongly recommend
+      ///seeing if Split() works for you)
+      void MPISplit(size_t Color,MPI_Comm& NewComm)const;
       ///@}
  
       ///You may not assign a communicator
@@ -387,6 +390,9 @@ class Communicator{
       
       ///Prints the communicator as a string
       std::string ToString()const;
+      
+      ///Allows (mainly DVector) to grab the world
+      const madness::World& World()const{return *World_;}
       
    private:
       ///The Madness world we are wrapping, represents the resources at our

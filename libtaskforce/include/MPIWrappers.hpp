@@ -29,11 +29,11 @@ void Communicator::Bcast(T& Data,size_t Root)const{
 
 template<typename T>
 void Communicator::Recv(T& Data,size_t Sender,size_t MsgTag)const{
-          size_t Length;
-          MPI_Recv((int*)(&Length),1,MPI_INT,(int)Sender,999,
+          int Length;
+          MPI_Recv(&Length,1,MPI_INT,(int)Sender,999,
                    MPIComm(),MPI_STATUS_IGNORE);
           Binary_t BinData(Length);
-          MPI_Recv(BinData.data(),(int)Length,MPI_BYTE,(int)Sender,
+          MPI_Recv(BinData.data(),Length,MPI_BYTE,(int)Sender,
                    (int)MsgTag,MPIComm(),MPI_STATUS_IGNORE);
           Data=DeSerialize<T>(BinData);
 }
@@ -41,10 +41,11 @@ void Communicator::Recv(T& Data,size_t Sender,size_t MsgTag)const{
 template<typename T>
 void Communicator::Send(const T& Data,size_t Recv, size_t MsgTag)const{
           Binary_t BinData=Serialize(Data);
-          size_t Length=BinData.size();
-          MPI_Send((int *)(&Length),1,MPI_INT,(int)Recv,999,MPIComm());
-          MPI_Send(BinData.data(),(int)Length,MPI_BYTE,(int)Recv,
+          int Length=(int)BinData.size();
+          MPI_Send(&Length,1,MPI_INT,(int)Recv,999,MPIComm());
+          MPI_Send(BinData.data(),Length,MPI_BYTE,(int)Recv,
                    (int)MsgTag,MPIComm());
 }
+
 #endif /* MPIWRAPPERS_HPP */
 

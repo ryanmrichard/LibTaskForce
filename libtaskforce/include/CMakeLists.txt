@@ -1,11 +1,15 @@
-set(LibTaskForceHeaders CommStats.hpp
+set(LibTaskForceHeaders 
+                    AddTask.hpp
+                    CommStats.hpp
                     Communicator.hpp
                     DVector.hpp
                     Environment.hpp
                     Future.hpp
                     LibTaskForce.hpp
                     MadnessHelper.hpp
+                    MPIWrappers.hpp
                     ParallelAssert.hpp
+                    Reduce.hpp
                     Serialization.hpp
                     TaskResults.hpp
                     Timer.hpp

@@ -44,7 +44,11 @@ MPI_Comm Communicator::MPIComm()const{
 }
 
 void Communicator::Barrier()const{
-   if(BarrierOn_&&MyStats_)MyStats_->World().mpi.comm().Barrier();
+   if(BarrierOn_&&MyStats_)MPI_Barrier(MyStats_->Comm().MPIComm());
+}
+
+void Communicator::MPISplit(size_t Color,MPI_Comm& NewComm)const{
+    MPI_Comm_split(MPIComm(),(int)Color,0,&NewComm);
 }
 
 //Does a floor with integers
@@ -85,7 +89,7 @@ Communicator Communicator::Split(size_t n,
     bool IsActive=(Me<=FirstExtraProc);
     size_t MyGroup=(IsActive?DivideFxn(Me,m):NGroups);
     
-    RoundRobin* MyStats=new RoundRobin(this->World_,IsActive,NGroups,MyGroup);
+    RoundRobin* MyStats=new RoundRobin(this,IsActive,NGroups,MyGroup);
     
     /*  I apparently do not understand MPI_groups so we're doing this with
      *  MPI_Split...
@@ -95,7 +99,7 @@ Communicator Communicator::Split(size_t n,
      *  down into Madness
      */
     MPI_Comm MPI_NewComm;
-    MPI_Comm_split(MPIComm(),MyGroup,0,&MPI_NewComm);
+    MPISplit(MyGroup,MPI_NewComm);
     
     ///Now make a new comm, with the appropriate number of threads
     ///Note that this is the number of task spawners, each task spawner

@@ -45,8 +45,10 @@ class DVector: private madness::WorldObject<DVector<T>>{
         std::shared_ptr<const CommStats> MyStats_;      
         
     public:
-        DVector(madness::World& Aworld,std::shared_ptr<const CommStats> MyStats):
-            Base_t(Aworld),MyStats_(MyStats){Base_t::process_pending();}
+        DVector(std::shared_ptr<const CommStats> MyStats):
+            //I don't really know if Madness violates the const-ness
+            Base_t(const_cast<madness::World&>(MyStats->Comm().World())),
+                   MyStats_(MyStats){Base_t::process_pending();}
         DVector(const DVector<T>&)=default;
         DVector(DVector<T>&&)=default;
         DVector<T>& operator=(const DVector<T>&)=default;

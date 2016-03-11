@@ -1,4 +1,6 @@
-set(LibTaskForceSrc Communicator.cpp
+set(LibTaskForceSrc 
+                    CommStats.cpp
+                    Communicator.cpp
                     Environment.cpp
                     MadnessHelper.cpp
                     Timer.cpp

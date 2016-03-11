@@ -54,7 +54,7 @@ namespace LibTaskForce {
     public:
 
         TaskResults(const Communicator& Comm) :
-        WasSynched_(false),Comm_(Comm), Stats_(Comm.GetStats()) {
+            WasSynched_(false),Stats_(Comm.GetStats()) {
         }
 
         void push_back(const Future<T>& FIn) {
@@ -128,9 +128,6 @@ namespace LibTaskForce {
 
         ///These are the futures we are holding
         std::vector<Future<T>> Futures_;
-
-        ///The communicator we're associated with
-        const Communicator& Comm_;
         
         ///These are the CommStats we are using
         std::shared_ptr<const CommStats> Stats_;
@@ -158,8 +155,8 @@ namespace LibTaskForce {
 
         typedef std::vector<T> Result_t;
         
-        const size_t Me = Stats_->Rank(), NProcs = Stats_->World().mpi.nproc(), 
-                    Root = 0;
+        const size_t Me=Stats_->Rank(),NProcs = Stats_->Comm().NProcs(),Root=0;
+        const Communicator& Comm=Stats_->Comm();
         
         bool AmIRoot = (Me == Root);
 
@@ -184,11 +181,11 @@ namespace LibTaskForce {
             }
             if (AmIRoot) {
                 Result_t DeSerial;
-                Comm_.Recv(DeSerial,i);
+                Comm.Recv(DeSerial,i);
                 FullResults.insert(FullResults.end(),
                         DeSerial.begin(), DeSerial.end());
             } else if (Me == i)
-                Comm_.Send(LocalResults,Root);
+                Comm.Send(LocalResults,Root);
         }
 
         int BufferLength = 0;
@@ -213,7 +210,7 @@ namespace LibTaskForce {
             }
         }
         
-        Comm_.Bcast(Data_,Root);
+        Comm.Bcast(Data_,Root);
         
         //Since we copied the data free the futures
         std::vector<Future < T >> ().swap(Futures_);

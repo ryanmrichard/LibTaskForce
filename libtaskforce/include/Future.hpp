@@ -151,7 +151,7 @@ class Future{
       
       ///The constructor for making a future to a remote task
       Future(std::shared_ptr<const CommStats> Stats,size_t TaskNum):
-        TaskNum_(TaskNum),DaFuture_(new DVector<T>(Stats->World(),Stats)),
+        TaskNum_(TaskNum),DaFuture_(new DVector<T>(Stats)),
         IsLocal_(Stats->MyTask(TaskNum)){}
       
       ///The constructor makes a Future that actually does stuff

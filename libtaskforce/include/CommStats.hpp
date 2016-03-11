@@ -14,7 +14,10 @@
 #ifndef COMMSTATS_HPP
 #define COMMSTATS_HPP
 
+#include<cstdlib>
+
 namespace LibTaskForce{
+class Communicator;
 
 /** \brief Little class for storing the details of a communicator
  * 
@@ -34,12 +37,13 @@ namespace LibTaskForce{
 class CommStats{
 public:
     ///Initializes the communicator's statistics
-    CommStats(std::shared_ptr<madness::World> Parent,
-              bool IsActive=true,size_t Me=0):
-        Active_(IsActive),MyRank_(Me),Parent_(Parent){}
+    CommStats(const Communicator* ParentComm,bool IsActive=true,size_t Me=0);
+    CommStats(const CommStats&)=default;
+    CommStats(CommStats &&)=default;
+    CommStats()=delete;
         
     ///No clean-up, but makes the compiler hush
-    virtual ~CommStats(){}
+    virtual ~CommStats()=default;
        
     ///Returns true if this communicator is active in the MPI action
     bool Active()const{return Active_;}
@@ -53,16 +57,16 @@ public:
     ///Returns the process that ran the task
     virtual size_t WhoRanTask(size_t TaskNum)const=0;
     
-    ///Returns the Madness world on which communication should be done
-    madness::World& World()const{return *Parent_;}
+    ///Returns the communicator on which synchronization should be done
+    const Communicator& Comm()const;
     
 private:
     ///True if communicator is active
     const bool Active_;
     ///My process rank
     const size_t MyRank_;
-    ///The Madness world of our parent, needed for communication
-    std::shared_ptr<madness::World> Parent_;
+    ///Our parent, needed for communication
+    const Communicator* Parent_;
 };
 
 ///CommStats specialization to tasks being handled via a round-robin manner
@@ -71,8 +75,7 @@ private:
     const size_t NRanks_;
 public:
     ///By default creates a communicator where everyone runs every task
-    RoundRobin(std::shared_ptr<madness::World> Parent=
-                      std::shared_ptr<madness::World>(),
+    RoundRobin(const Communicator* Parent=nullptr,
                bool IsActive=true,
                size_t NRanks=1,
                size_t Me=0):
