@@ -6,6 +6,7 @@
 #include "Future.hpp"
 #include "madness/world/MADworld.h"
 #include "CommStats.hpp"
+#include "Serialization.hpp"
 namespace LibTaskForce{
     
 class Environment;
@@ -359,6 +360,19 @@ class Communicator{
       ///This function should be used sparingly, but if you need it this is the
       ///the current MPI_COMM
       MPI_Comm MPIComm()const;
+      
+      ///@{ MPI Wrappers
+      template<typename T>
+      void Send(const T& Data,size_t Recv, size_t MsgTag=0)const;
+      
+      template<typename T>
+      void Recv(T& Data,size_t Sender,size_t MsgTag=0)const;
+      
+      ///Broadcasts Data from Root, Data must be serializable
+      template<typename T>
+      void Bcast(T& Data,size_t Root=0)const;
+      
+      ///@}
  
       ///You may not assign a communicator
       const Communicator& operator=(const Communicator&)=delete;
@@ -400,8 +414,10 @@ class Communicator{
        */
       size_t TasksAdded_;     
       
+      ///What number communicator am I?
       size_t MyNum_;
       
+      ///True if the barrier in AddTask and Reduce is on
       bool BarrierOn_=true;
 
       friend Environment;
@@ -429,153 +445,17 @@ class Communicator{
       void Release();
 };
 
-/* In-depth implementations*/
+
 
 inline std::ostream& operator<<(std::ostream& os, const Communicator& Comm){
     return os<<Comm.ToString();
 }
 
-template<typename Fxn_t,typename...Args>
-Future<
-    typename RemoveFuture<
-        typename std::result_of<Fxn_t(Args...)>::type
-    >::type
->
-Communicator::AddTask(Fxn_t YourTask,Args... args){
-    typedef typename std::result_of<Fxn_t(Args...)>::type RealType_t;
-    typedef typename RemoveFuture<RealType_t>::type Result_t;
-    size_t TaskOwner=MyStats_->WhoRanTask(TasksAdded_);
-    bool ImActive=MyStats_->Active(),MyTask=MyStats_->MyTask(TasksAdded_);
-    Future<Result_t> Rvalue;
-    //If I'm not running tasks, or if this isn't my problem I just return a
-    //future
-    if(!ImActive||!MyTask){
-        Rvalue=Future<Result_t>(GetStats(),TasksAdded_++);
-    }
-    else if(NThreads()==1){//We're the only one running tasks...
-        RealType_t Temp=YourTask(args...);
-        Result_t Temp2=GetValue<Result_t>(Temp);
-        Rvalue=Future<Result_t>(GetStats(),TasksAdded_++,Temp2);
-    }
-    else{ //Otherwise stick it in the queue and be done with it
-        madness::Future<RealType_t> Value=World_->taskq.add(YourTask,args...);
-        //Here's the trick if RealType_t is a Future we need to add a task that
-        //dereferences it to the queue, the result of which is the actual value
-        madness::Future<Result_t> RealValue;
-        if(IsFuture<RealType_t>::value){
-            std::function<Result_t(RealType_t)> fxn=[](RealType_t in){
-                return GetValue<Result_t>(in);
-            };
-            RealValue=World_->taskq.add(fxn,Value);
-        }
-        else RealValue=ToMadFuture<Result_t>(Value);
-        Rvalue=Future<Result_t>(GetStats(),TasksAdded_++,RealValue); 
-    }
-    //Need to wait for all processes to add the task or else they may get ahead
-    //and request the task from a remote process, before that remote process
-    //has gone through here.  For one thread there won't be any active messages
-    //so this doesn't apply, plus the barrier makes the MPI processes wait even
-    //if it's not their task
-    if(NThreads()!=1)Barrier();
-    return Rvalue;
-  }
+/* In-depth implementations*/
+#include "MPIWrappers.hpp"
+#include "AddTask.hpp"
+#include "Reduce.hpp"
 
-
-template<typename ResultIn_t,typename Itr_t,typename Op_t>
-Future<typename RemoveFuture<ResultIn_t>::type> Communicator::Reduce(Itr_t BeginItr, Itr_t EndItr,
-                                      const Op_t& Op,size_t Chunk){
-    typedef typename RemoveFuture<ResultIn_t>::type Result_t;
-    Future<Result_t> RValue;
-    /*bool BarrierStatus=BarrierOn_;
-    BarrierOn_=false;
-    bool ImActive=MyStats_->Active(),MyTask=MyStats_->MyTask(TasksAdded_);
-
-    size_t Distance=std::distance(BeginItr,EndItr);
-    if(Distance>Chunk){//We have work to do...
-        //All processes need to go through this logic so that the TasksAdded_ 
-        //line up
-    
-        //Split the range and run recursively (TasksAdded_ updated in AddTask)
-    
-        *   Assume we had 9 tasks in a vector
-        *   {1,2,3,4,5,6,7,8,9}
-        *   Distance will be 9, hence Distance%2=1 and we are
-        *   advancing the begin iterator by 4.  It originally pointed
-        *   to 1, now it points to 5.  Thus the LSum will entail 4 values and
-        *   the right 5.
-        *
-        Itr_t RHSBegin(BeginItr);
-        std::advance(RHSBegin,(Distance-Distance%2)/2);
-        //Barrier's off...
-        std::function<Future<Result_t>(Itr_t,Itr_t,const Op_t&, size_t)> Fxn=
-                [=](Itr_t Bit,Itr_t Eit,const Op_t& O1, size_t C1){
-                    return this->Reduce<Result_t>(Bit,Eit,O1,C1);
-                 };
-        Future<Result_t> LSum=
-           AddTask(Fxn,BeginItr,RHSBegin,Op,Chunk);
-        Future<Result_t> RSum=
-           AddTask(Fxn,RHSBegin,EndItr,Op,Chunk);
-        //Use a proxy to keep the asynch going...
-        class ReduceProxy{
-            private:
-                Op_t Op_;
-            public:
-                ReduceProxy(const Op_t& OpIn):Op_(OpIn){}
-                Result_t operator()(Future<Result_t> LHS, 
-                                    Future<Result_t> RHS)const{
-                return Op_(*LHS,*RHS);
-                }
-        };
-        RValue=AddTask(ReduceProxy(Op),LSum,RSum);
-    }
-    else{
-        if(!ImActive||!MyTask)
-            RValue=Future<Result_t>(GetStats(),TasksAdded_++);
-        else if(NThreads()==1){//Don't call Madness or it will spawn a thread
-            Result_t Sum=Result_t();
-            for(;BeginItr!=EndItr;++BeginItr)
-                Sum=Op(Sum,Op(BeginItr));
-            RValue=Future<Result_t>(GetStats(),TasksAdded_++,Sum);
-        }
-        else{//Madness takes over now
-            RValue=Future<Result_t>(GetStats(),TasksAdded_++,
-                World_->taskq.reduce<Result_t>(
-                    madness::Range<Itr_t>(BeginItr,EndItr,Chunk),Op
-                )
-            );       
-        }
-    }
-    //Need barrier for same reason we needed it in AddTask,but need to be
-    //careful with the recursion...
-    //If we turned it off, turn it on
-    if(BarrierStatus)BarrierOn_=true;
-    if(NThreads()!=1)Barrier();*/
-    return RValue;
-}
-
-template<typename Itr_t,typename Op_t>
-Future<bool> Communicator::ForEach(Itr_t BeginItr,Itr_t EndItr,const Op_t& Op,
-                     size_t ChunkSize){
-    class OpWrapper{
-        private:
-            Op_t Op_;
-        public:
-            OpWrapper(const Op_t& OpIn):Op_(OpIn){}
-            OpWrapper(const OpWrapper&)=default;
-            bool operator()(const Itr_t& Itr)const{
-               return Op_(*Itr);
-            }
-            bool operator()(bool lhs,bool rhs)const{
-                //We cheat since bool defaults to 0 and any non-zero value is
-                //true (cheat required because reduce will default initialize
-                //the first value and false && anything= false)
-                size_t NewLhs=static_cast<size_t>(lhs);
-                size_t NewRhs=static_cast<size_t>(rhs);
-                return static_cast<bool>(NewLhs + NewRhs);
-            }
-    };
-    return Reduce<bool>(BeginItr,EndItr,OpWrapper(Op),ChunkSize);
-}
 
 
 }//End namespaces
