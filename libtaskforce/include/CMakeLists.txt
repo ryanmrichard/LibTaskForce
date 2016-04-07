@@ -14,5 +14,5 @@ set(LibTaskForceHeaders
                     TaskResults.hpp
                     Timer.hpp
 )
-install(DIRECTORY cereal DESTINATION include)
+install(DIRECTORY LTFcereal DESTINATION include)
 install(FILES ${LibTaskForceHeaders} DESTINATION include)

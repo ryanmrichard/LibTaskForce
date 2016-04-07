@@ -55,6 +55,9 @@ class Communicator{
       ///until all other members arrive
       void Barrier()const;
 
+      ///Returns the number of tasks this comm has scheduled, a unique ID per
+      ///comm
+      size_t NTasks()const{return TasksAdded_;}
       /** \brief Adds a task to the queue and then gives you a future to the
        *  result.
        * 

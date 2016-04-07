@@ -4,7 +4,7 @@ list(APPEND CMAKE_PREFIX_PATH "${DESTDIR}/${CMAKE_INSTALL_PREFIX}/external/madne
 list(APPEND CMAKE_PREFIX_PATH "${DESTDIR}/${CMAKE_INSTALL_PREFIX}/external/cereal")
 find_package(MPI REQUIRED)
 find_package(MADNESS REQUIRED COMPONENTS world)
-include_directories(include/cereal/include)
+include_directories(include/LTFcereal/include)
 add_subdirectory(src)
 add_subdirectory(include)
 add_subdirectory(test)
