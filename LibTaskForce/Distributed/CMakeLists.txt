@@ -1,0 +1,7 @@
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/Distributed")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+add_library(Distributed OBJECT ProcessComm.cpp ProcessEnv.cpp ProcessQueue.cpp)
+#install(TARGETS Threading RUNTIME DESTINATION lib)
