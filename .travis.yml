@@ -8,6 +8,7 @@ matrix:
        apt:
          sources:
          - ubuntu-toolchain-r-test
+         - george-edison55-precise-backports
          packages:
          - cmake
          - cmake-data
