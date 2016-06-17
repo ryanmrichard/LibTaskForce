@@ -23,7 +23,7 @@ script:
   - cmake -H. -Bbuild -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR} -DCMAKE_CXX_COMPILER=${CXX_COMPILER} -DMPI_CXX_COMPILER=mpicxx -DCMAKE_BUILD_TYPE=debug 
   - cd build && make install
   - cd ${TRAVIS_BUILD_DIR}/bin
-  - ./ThreadTest 2
+  - ./ThreadTest 2 30 500000000
   - mpirun -n 2 ./DistTest 600 6
   - mpirun -n 2 ./HybridTest 1 600 6
   - mpirun -n 1 ./HybridTest 2 600 6
