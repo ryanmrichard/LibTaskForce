@@ -78,7 +78,6 @@ int main(int argc,char** argv){
     const size_t NThreads=(size_t)std::atoi(argv[1]);
     const size_t N=(argc>2?(size_t)std::atoi(argv[2]):30);
     const size_t SumMax=(argc>3?(size_t)std::atoi(argv[3]):(size_t)1e9);
-    bool AllPassed=true;
     
     ThreadEnv Env(NThreads);
     const ThreadComm& OrigComm=Env.comm();
@@ -89,10 +88,10 @@ int main(int argc,char** argv){
     tbb::tick_count t0=tbb::tick_count::now();
     ThreadFuture<size_t> DaNum=NewComm->add_task<size_t>(FibTask(N));
     size_t Num=DaNum.get();
-    AllPassed=(AllPassed && (FibNums[N-1]==Num));
     tbb::tick_count t1=tbb::tick_count::now();
-    
     std::cout<<"Wall time: "<<(t1-t0).seconds()<<std::endl;
+    if(FibNums[N]!=Num)
+        throw std::runtime_error("Fibonacci number was wrong\n");
 
     std::vector<double> Vec(SumMax);
     const double Max=(double)SumMax;
@@ -103,7 +102,8 @@ int main(int argc,char** argv){
     t0=tbb::tick_count::now();
     double DaSum=NewComm->reduce<double>(MyReduceTask(),Vec.begin(),Vec.end());
     t1=tbb::tick_count::now();
-    AllPassed=(AllPassed && (fabs(100.0*(DaSum-TheoryValue)/TheoryValue)<1e-5));
+    if(fabs(100.0*(DaSum-TheoryValue)/TheoryValue)>1e-5)
+        throw std::runtime_error("Summation added up to the wrong value\n");
     std::cout<<"Wall time: "<<(t1-t0).seconds()<<std::endl;
-    return AllPassed?0:1;
+    return 0;
 }
