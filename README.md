@@ -1,5 +1,7 @@
 # LibTaskForce
 
+Travis-CI status: [![Build Status](https://travis-ci.org/ryanmrichard/LibTaskForce.svg?branch=master)](https://travis-ci.org/ryanmrichard/LibTaskForce/)
+
 ## Summary
 Opportunities for task-based algorithms usually appear in the form of loops over
 tasks.  A task for our purposes is a section of code that can run independently
