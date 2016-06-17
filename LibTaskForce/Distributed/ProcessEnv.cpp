@@ -25,7 +25,7 @@
 
 namespace LibTaskForce{  
     
-ProcessEnv::ProcessEnv(const MPI_Comm& Comm):
+ProcessEnv::ProcessEnv(MPI_Comm Comm):
     WeStartedMPI_(false){
     int Temp;
     MPI_Initialized(&Temp);

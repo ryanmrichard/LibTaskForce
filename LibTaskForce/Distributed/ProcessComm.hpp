@@ -34,6 +34,7 @@
 #include "LibTaskForce/Util/Serialization.hpp"
 #include "LibTaskForce/Distributed/ProcessFuture.hpp"
 #include "LibTaskForce/Distributed/ProcessQueue.hpp"
+#include "LibTaskForce/Distributed/ProcessTask.hpp"
 #include "LibTaskForce/General/GeneralComm.hpp"
 
 namespace LibTaskForce {
@@ -118,74 +119,14 @@ public:
      */
     std::unique_ptr<ProcessComm> split(size_t NProcs=0)const;
     
-    enum IDs{
-        ROOT_PROCESS=0
-    };///< enum for setting the root process
     
-    enum Tags{
-        GENERIC_TAG=123,
-        GENERIC_SIZE=999
-    };///< Enums for message tags
-    
-    template<typename T>
-    void send(const T& Data,size_t RecvID, size_t MsgTag=GENERIC_TAG)const
-    {
-        binary_type SerializedData=serialize(Data);
-        int Length=(int)SerializedData.size();
-        MPI_Send(&Length,1,MPI_INT,(int)RecvID,GENERIC_SIZE,Comm_);
-        MPI_Send(SerializedData.data(),Length,MPI_BYTE,(int)RecvID,(int)MsgTag,Comm_);
-    }
-    
-    template<typename T>
-    void recv(T& Data,size_t SenderID,size_t MsgTag=GENERIC_TAG)const
-    {
-        const int Sender=(int)SenderID;  
-        int Length;
-        MPI_Recv(&Length,1,MPI_INT,Sender,GENERIC_SIZE,Comm_,MPI_STATUS_IGNORE);
-        binary_type BinData(Length);
-        MPI_Recv(BinData.data(),Length,MPI_BYTE,Sender,(int)MsgTag,Comm_,MPI_STATUS_IGNORE);
-        Data=deserialize<T>(BinData);
-    }
-
-    template<typename T>
-    void bcast(T& Data,size_t RootID=ROOT_PROCESS)const
-    {
-          binary_type BinData;
-          if(rank()==RootID)BinData=serialize(Data);
-          int Length=(int)BinData.size();
-          const int Root=(int)RootID;
-          int Error=MPI_Bcast(&Length,1,MPI_INT,Root,Comm_);
-          PARALLEL_ASSERT(Error==MPI_SUCCESS,"Broadcast failed");
-          if(rank()!=RootID)BinData=binary_type(Length);
-          Error=MPI_Bcast(BinData.data(),Length,MPI_BYTE,Root,Comm_);
-          PARALLEL_ASSERT(Error==MPI_SUCCESS,"Broadcast failed");
-          if(rank()!=RootID)Data=deserialize<T>(BinData);
-    } 
-    
-    template<typename T>
-    T all_gatherv(T& Data)const
-    {
-        binary_type BinData=serialize(Data);
-        int Length=(int)BinData.size();
-        std::vector<int> Lengths(this->size());
-        MPI_Allgather(&Length,1,MPI_INT,Lengths.data(),1,MPI_INT,Comm_);
-        int Total=0;
-        std::vector<int> Displacements(this->size());
-        for(size_t i=1;i<Lengths.size();++i){
-            Total+=Lengths[i-1];
-            Displacements[i]=Displacements[i-1]+Lengths[i-1];
-        }
-        binary_type Buffer(Total);
-        MPI_Allgatherv(BinData.data(),Length,MPI_BYTE,Buffer.data(),
-                Lengths.data(),Displacements.data(),Comm_);
-        return deserialize<T>(Buffer);
-    }
     
     ///Allows you to add tasks one at a time (useful if tasks are all different)
     template<typename return_type,typename functor_type>
     ProcessFuture<return_type> add_task(const functor_type& Fxn)
     {
-        return Queue_->add_task<return_type>(Fxn);
+        ProcessTask<return_type,functor_type,ProcessComm> Task(Fxn,*this);
+        return Queue_->add_task<return_type>(Task);
     }
     
     /** \brief More efficient way of adding many tasks at once

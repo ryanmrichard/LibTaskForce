@@ -24,18 +24,9 @@
 
 namespace LibTaskForce{
 
-bool Scheduler::my_task(size_t TaskNum, const ProcessComm& Comm) const
-{
-            return who_runs_task(TaskNum,Comm)==Comm.rank();
-}
-
-size_t RoundRobin::who_runs_task(size_t i, const ProcessComm& Comm) const
-{
-    return i%Comm.size();
-}
-
 ProcessQueue::ProcessQueue(ProcessComm& Comm):
-        NTasks_(0),Comm_(Comm)
-{}
+        NTasks_(0),Scheduler_(Comm)
+{
+}
 
 }//end namespace

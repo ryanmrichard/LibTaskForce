@@ -17,37 +17,39 @@
  *
  *   You should have received a copy of the GNU General Public License
  *   along with LibTaskForce.  If not, see <http://www.gnu.org/licenses/>.
- */ 
-
-/** \file LibTaskForce.hpp
- *  \brief Convenience header for LibTaskForce
- *  \author Ryan M. Richard
- *  \version 1.0
- *  \date June 16, 2016
  */
 
-#ifndef LIBTASKFORCE_GUARD_LIBTASKFORCE_HPP
-#define LIBTASKFORCE_GUARD_LIBTASKFORCE_HPP
-
-#include "LibTaskForce/Threading/ThreadEnv.hpp"
-#include "LibTaskForce/Threading/ThreadComm.hpp"
-#include "LibTaskForce/Threading/ThreadFuture.hpp"
-
-#include "LibTaskForce/Distributed/ProcessEnv.hpp"
 #include "LibTaskForce/Distributed/ProcessComm.hpp"
-#include "LibTaskForce/Distributed/ProcessFuture.hpp"
+ 
 
-#include "LibTaskForce/Hybrid/HybridEnv.hpp"
-#include "LibTaskForce/Hybrid/HybridComm.hpp"
-#include "LibTaskForce/Hybrid/HybridFuture.hpp"
+namespace LibTaskForce {
 
-#include "LibTaskForce/Util/pragma.h"
+Scheduler::Scheduler(ProcessComm& Comm) :
+Comm_(Comm)
+{}
 
-PRAGMA_WARNING_PUSH
-PRAGMA_WARNING_IGNORE_CONVERT
-PRAGMA_WARNING_IGNORE_FP_EQUALITY
-#include <tbb/tbb.h>
-PRAGMA_WARNING_POP
+MPI_Comm Scheduler::mpi_comm()const
+{
+    return Comm_.mpi_comm();
+}
 
-#endif /* LIBTASKFORCE_GUARD_LIBTASKFORCE_HPP */
+size_t Scheduler::me()const
+{
+    return Comm_.rank();
+}
 
+bool Scheduler::my_task(size_t TaskNum) const
+{
+            return who_runs_task(TaskNum)==me();
+}
+
+RoundRobin::RoundRobin(ProcessComm& Comm) :
+Scheduler(Comm)
+{}
+
+size_t RoundRobin::who_runs_task(size_t i) const
+{
+    return i%Comm_.size();
+}
+
+}//End namespace LibTaskForce

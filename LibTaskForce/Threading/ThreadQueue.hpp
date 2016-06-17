@@ -28,7 +28,14 @@
 
 #ifndef LIBTASKFORCE_GUARD_THREADQUEUE_HPP
 #define LIBTASKFORCE_GUARD_THREADQUEUE_HPP
+
+#include "LibTaskForce/Util/pragma.h"
+
+PRAGMA_WARNING_PUSH
+PRAGMA_WARNING_IGNORE_CONVERT
+PRAGMA_WARNING_IGNORE_FP_EQUALITY
 #include <tbb/tbb.h>
+PRAGMA_WARNING_POP
 
 namespace LibTaskForce {
 template<typename T> class ThreadFuture;
@@ -55,7 +62,6 @@ public:
                                           const_iterator Begin,
                                           const_iterator End)
     {
-        using return_type=typename TaskType::return_type;
         tbb::blocked_range<const_iterator> r(Begin,End);
         tbb::parallel_reduce(r,Task);
         return Task.MySum_;

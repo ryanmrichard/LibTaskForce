@@ -20,13 +20,14 @@
  */ 
 #include "LibTaskForce/Distributed/ProcessComm.hpp"
 #include "LibTaskForce/Distributed/ProcessEnv.hpp"
+#include "LibTaskForce/Distributed/MPIWrappers.hpp"
 #include "LibTaskForce/Util/ParallelAssert.hpp"
 #include "ProcessQueue.hpp"
 
 namespace LibTaskForce {
 
 ProcessComm::ProcessComm(MPI_Comm Comm,ProcessEnv* Env) :
-    Comm_(Comm),base_type(Env,new ProcessQueue(*this))
+    base_type(Env,new ProcessQueue(*this)),Comm_(Comm)
 {   
 }
 
@@ -42,16 +43,12 @@ void ProcessComm::barrier()const
 
 size_t ProcessComm::size()const
 {
-    int DaSize;
-    MPI_Comm_size(Comm_,&DaSize);
-    return static_cast<size_t>(DaSize);
+    return LibTaskForce::size(Comm_);
 }
 
 size_t ProcessComm::rank()const
 {
-    int DaRank;
-    MPI_Comm_rank(Comm_,&DaRank);
-    return static_cast<size_t>(DaRank);
+    return LibTaskForce::rank(Comm_);
 }
 
 bool ProcessComm::active()const

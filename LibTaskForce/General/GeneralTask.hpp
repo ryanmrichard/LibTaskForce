@@ -19,35 +19,29 @@
  *   along with LibTaskForce.  If not, see <http://www.gnu.org/licenses/>.
  */ 
 
-/** \file LibTaskForce.hpp
- *  \brief Convenience header for LibTaskForce
+/** \file GeneralTask.hpp
+ *  \brief Write Me!!!!!!
  *  \author Ryan M. Richard
  *  \version 1.0
  *  \date June 16, 2016
  */
 
-#ifndef LIBTASKFORCE_GUARD_LIBTASKFORCE_HPP
-#define LIBTASKFORCE_GUARD_LIBTASKFORCE_HPP
+#ifndef LIBTASKFORCE_GUARD_GENERALTASK_HPP
+#define LIBTASKFORCE_GUARD_GENERALTASK_HPP
 
-#include "LibTaskForce/Threading/ThreadEnv.hpp"
-#include "LibTaskForce/Threading/ThreadComm.hpp"
-#include "LibTaskForce/Threading/ThreadFuture.hpp"
+namespace LibTaskForce {
 
-#include "LibTaskForce/Distributed/ProcessEnv.hpp"
-#include "LibTaskForce/Distributed/ProcessComm.hpp"
-#include "LibTaskForce/Distributed/ProcessFuture.hpp"
+template<typename functor_type,typename comm_type>
+struct Task {
+    comm_type& CurrentComm_;
+    functor_type Fxn_;
+    Task(const functor_type& Fxn,comm_type& Comm) :
+       CurrentComm_(Comm),Fxn_(Fxn)
+    {}
+    Task(const Task&)=default;
+};
 
-#include "LibTaskForce/Hybrid/HybridEnv.hpp"
-#include "LibTaskForce/Hybrid/HybridComm.hpp"
-#include "LibTaskForce/Hybrid/HybridFuture.hpp"
 
-#include "LibTaskForce/Util/pragma.h"
-
-PRAGMA_WARNING_PUSH
-PRAGMA_WARNING_IGNORE_CONVERT
-PRAGMA_WARNING_IGNORE_FP_EQUALITY
-#include <tbb/tbb.h>
-PRAGMA_WARNING_POP
-
-#endif /* LIBTASKFORCE_GUARD_LIBTASKFORCE_HPP */
+}//End namespace libtaskforce
+#endif /* PULSAR_GHUARD_GENERALTASK_HPP */
 

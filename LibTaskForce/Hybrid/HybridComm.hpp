@@ -30,9 +30,9 @@
 #define LIBTASKFORCE_GUARD_HYBRIDCOMM_HPP
 
 #include <memory>
+#include "LibTaskForce/General/GeneralComm.hpp"
 #include "LibTaskForce/Threading/ThreadComm.hpp"
 #include "LibTaskForce/Distributed/ProcessComm.hpp"
-#include "LibTaskForce/General/GeneralComm.hpp"
 #include "LibTaskForce/Hybrid/HybridFuture.hpp"
 #include "LibTaskForce/Hybrid/HybridTask.hpp"
 

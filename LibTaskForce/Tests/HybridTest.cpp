@@ -19,7 +19,6 @@
  *   along with LibTaskForce.  If not, see <http://www.gnu.org/licenses/>.
  */ 
 
-#include <tbb/tick_count.h>
 #include <vector>
 #include <cstdlib>
 #include <iostream>
@@ -69,7 +68,7 @@ int main(int argc,char** argv){
     t1=tbb::tick_count::now();
     DistTime=(t1-t0).seconds();
     
-    const double TwoNorm=sqrt(MMError(N,M,DistBuffer,SerialBuffer)/N*N);
+    const double TwoNorm=MMError(N,M,DistBuffer,SerialBuffer);
     AllPassed=(AllPassed&& TwoNorm<1e-6);
     
     if(NewComm.rank()==0)
@@ -80,7 +79,7 @@ int main(int argc,char** argv){
     if(NewComm.rank()==0)
         std::cout<<"Distributed time for squaring matrix: "<<DistTime
                  <<std::endl<<"Speedup: "<<SerialTime/DistTime
-                 <<" %Efficiency: "<<100/NewComm.size()*(SerialTime/DistTime)
+                 <<" %Efficiency: "<<100.0/(double)NewComm.size()*(SerialTime/DistTime)
                  <<std::endl;
 
     return AllPassed?0:1;

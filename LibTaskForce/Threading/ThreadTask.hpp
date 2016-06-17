@@ -30,38 +30,35 @@
 #define LIBTASKFORCE_GUARD_THREADTASK_HPP
 
 #include <future>
+#include "LibTaskForce/General/GeneralTask.hpp"
 
 namespace LibTaskForce {
-class ThreadComm;
 
 ///A wrapper around a functor for use in ThreadComm::add_task
-template<typename return_type,typename functor_type>
-struct ThreadTask {
-    functor_type Fxn_;///<The function that will be called
-    using return_type = return_type;
-    using promise_type = std::promise<return_type>;
+template<typename T,typename functor_type,typename comm_type>
+struct ThreadTask :public Task<functor_type,comm_type> {
+    using promise_type = std::promise<T>;
+    using return_type=T;
     std::shared_ptr<promise_type> P_;///<Eventually will be the result
-    ThreadComm& CurrentComm_;///<The communicator we are using
     ThreadTask(const ThreadTask&) = default;
     
-    ThreadTask(const functor_type& F, ThreadComm& Cm) :
-    Fxn_(F), P_(std::make_shared<promise_type>()), CurrentComm_(Cm)
-    {
-    }
+    ThreadTask(const functor_type& F, comm_type& Cm) :
+    Task<functor_type,comm_type>(F,Cm),P_(std::make_shared<promise_type>())
+    {}
 
     ///The call used by tbb for running the task
     void operator()()const
     {
-        std::unique_ptr<ThreadComm> Comm=CurrentComm_.split();
-        P_->set_value(Fxn_(*Comm));
+        std::unique_ptr<comm_type> Comm=this->CurrentComm_.split();
+        P_->set_value(this->Fxn_(*Comm));
     }
 };
 
 ///A wrapper around a task for doing reduction on my terms
-template<typename return_type,typename functor_type>
+template<typename T,typename functor_type>
 struct ReduceTask {
+    using return_type=T;///< The type of the final answer
     using MyType=ReduceTask<return_type,functor_type>;///< The type of this
-    using return_type=return_type;///< The type of the final answer
     functor_type Fxn_;///<The functor that will be used for reduction
     return_type MySum_;///< Eventually the result
     

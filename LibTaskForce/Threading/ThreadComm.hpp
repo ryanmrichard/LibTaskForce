@@ -88,7 +88,7 @@ public:
     template<typename return_type,typename functor_type>
     ThreadFuture<return_type> add_task(const functor_type& Fxn)
     {
-        ThreadTask<return_type,functor_type> Temp(Fxn,*this);
+        ThreadTask<return_type,functor_type,ThreadComm> Temp(Fxn,*this);
         return Queue_->add_task(Temp);
     }
     

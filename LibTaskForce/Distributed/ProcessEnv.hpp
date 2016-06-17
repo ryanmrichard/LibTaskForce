@@ -54,7 +54,7 @@ class ProcessEnv: public GeneralEnv<ProcessComm>{
        *  \param[in] Comm      The MPI communicator that we should attach to
        *                       We will take ownership if we start MPI
        */
-      explicit ProcessEnv(const MPI_Comm& Comm=MPI_COMM_WORLD);
+      explicit ProcessEnv(MPI_Comm Comm=MPI_COMM_WORLD);
 
       ///Shuts down MPI if we started it
       ~ProcessEnv();

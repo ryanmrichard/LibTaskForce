@@ -30,25 +30,25 @@
 #define LIBTASKFORCE_GUARD_PROCESSFUTURE_HPP
 
 #include<memory>
-
+#include "LibTaskForce/Distributed/MPIWrappers.hpp"
+#include "LibTaskForce/Distributed/Scheduler.hpp"
 namespace LibTaskForce {
-class ProcessComm;
 
 template<typename T>
 class ProcessFuture {
 private:
-    size_t Rank_;///<The rank that actually owns this data
     std::unique_ptr<T> Data_;///<The actual data
-    const ProcessComm* Comm_;///<The comm for data transfer
+    size_t Rank_;///<The rank that actually owns this data
+    Scheduler* Scheduler_;///<The comm for data transfer
 public:
     ///Constructor for making a future when this process is responsible for data
-    ProcessFuture(const T& Data,size_t Me,const ProcessComm* Comm):
-        Rank_(Me),Data_(new T(Data)),Comm_(Comm)
+    ProcessFuture(const T& Data,size_t Me,Scheduler* Sc):
+            Data_(new T(Data)),Rank_(Me),Scheduler_(Sc)
     {}
         
     ///Constructor for making a future when this process is not responsible
-    ProcessFuture(size_t Owner,const ProcessComm* Comm) :
-    Rank_(Owner),Comm_(Comm)
+    ProcessFuture(size_t Owner,Scheduler* Sc) :
+    Rank_(Owner),Scheduler_(Sc)
     {}
     
     ProcessFuture()=default;
@@ -63,7 +63,7 @@ public:
     ///Returns the value of the future (requires communication)
     T get(){
         T NewData;
-        Comm_->bcast((empty()?NewData:*Data_),Rank_);
+        bcast((empty()?NewData:*Data_),Scheduler_->mpi_comm(),Rank_);
         return (empty()? NewData : *Data_);
     }
     

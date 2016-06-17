@@ -22,7 +22,6 @@
 #include <vector>
 #include <cstdlib>
 #include <iostream>
-#include <tbb/tick_count.h>
 #include "LibTaskForce/LibTaskForce.hpp"
 
 const std::array<size_t,39> FibNums={
@@ -78,7 +77,7 @@ int main(int argc,char** argv){
     
     const size_t NThreads=(size_t)std::atoi(argv[1]);
     const size_t N=(argc>2?(size_t)std::atoi(argv[2]):30);
-    const size_t SumMax=(argc>3?(size_t)std::atoi(argv[3]):1e9);
+    const size_t SumMax=(argc>3?(size_t)std::atoi(argv[3]):(size_t)1e9);
     bool AllPassed=true;
     
     ThreadEnv Env(NThreads);

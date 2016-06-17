@@ -76,8 +76,6 @@ double MMError(size_t N,size_t M,
     double TwoNorm=0.0;
     const size_t BlockSide=N/M;
     for(size_t i=0;i<DistBuffer.size();++i){
-        const size_t BlockCol=i%M,BlockRow=(i-BlockCol)/M;
-        const size_t Start=BlockRow*BlockSide*N+BlockCol*BlockSide;
         for(size_t j=0;j<BlockSide;++j){
             for(size_t k=0;k<BlockSide;++k){
                 double Temp=DistBuffer[i][j*BlockSide+k]-
@@ -86,7 +84,7 @@ double MMError(size_t N,size_t M,
             }
         }
     }
-    return TwoNorm;
+    return sqrt(TwoNorm/(double)N*(double)N);
 }
 
 #endif /* LIBTASKFORCE_GUARD_MMTASK_HPP */

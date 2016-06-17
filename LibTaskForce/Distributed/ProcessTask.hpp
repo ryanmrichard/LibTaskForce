@@ -19,49 +19,35 @@
  *   along with LibTaskForce.  If not, see <http://www.gnu.org/licenses/>.
  */ 
 
-/** \file ProcessArray.hpp
+/** \file ProcessTask.hpp
  *  \brief Write Me!!!!!!
  *  \author Ryan M. Richard
  *  \version 1.0
- *  \date June 14, 2016
+ *  \date June 16, 2016
  */
 
-#ifndef LIBTASKFORCE_GUARD_PROCESSARRAY_HPP
-#define LIBTASKFORCE_GUARD_PROCESSARRAY_HPP
+#ifndef LIBTASKFORCE_GUARD_PROCESSTASK_HPP
+#define LIBTASKFORCE_GUARD_PROCESSTASK_HPP
 
-#include "ProcessComm.hpp"
-
+#include "LibTaskForce/General/GeneralTask.hpp"
 
 namespace LibTaskForce {
 
-template<typename T>
-class ProcessArray{
-    private:
-        std::vector<T> LocalData_;
-        std::vector<size_t> ActualLocation_;
-        const ProcessComm* Comm_;
-    public:
+template<typename T,typename functor_type,typename comm_type>
+struct ProcessTask : public Task<functor_type,comm_type> {
+    ProcessTask(const ProcessTask&)=default;
+    ProcessTask(const functor_type& F,comm_type& Comm) :
+        Task<functor_type,comm_type>(F,Comm)
+    {}
+    
+    T operator()()const
+    {
+        std::unique_ptr<comm_type> Comm=this->CurrentComm_.split();
+        return this->Fxn_(*Comm);
+    }
         
-        void push_back(const T& Data,size_t Location)
-        {
-            ActualLocation_.push_back(Location);
-            LocalData_.push_back(Data);
-        }
-        
-        void push_back(size_t Location)
-        {
-            ActualLocation_.push_back(Location)
-        }
-        
-        std::vector<T> get()
-        {
-            Comm_->barrier();
-            std::vector<T> Temp=Comm_->all_gatherv(LocalData_);
-            //Now sort
-        }
-            
 };
 
-}//End namespace LIbTaskForce
-#endif /* LIBTASKFORCE_GUARD_PROCESSARRAY_HPP */
+}//End namespace LibTaskForce
+#endif /* LIBTASKFORCE_GHUARD_PROCESSTASK_HPP */
 
