@@ -1,6 +1,6 @@
 # LibTaskForce
 
-Travis-CI status: [![Build Status](https://travis-ci.org/ryanmrichard/LibTaskForce.svg?branch=master)](https://travis-ci.org/ryanmrichard/LibTaskForce)
+[![Build Status](https://travis-ci.org/ryanmrichard/LibTaskForce.svg?branch=master)](https://travis-ci.org/ryanmrichard/LibTaskForce)[![codecov](https://codecov.io/gh/ryanmrichard/LibTaskForce/branch/master/graph/badge.svg)](https://codecov.io/gh/ryanmrichard/LibTaskForce)
 
 ## Summary
 Opportunities for task-based algorithms usually appear in the form of loops over
