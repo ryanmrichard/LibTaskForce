@@ -27,3 +27,5 @@ script:
   - mpirun -n 2 ./DistTest 600 6
   - mpirun -n 2 ./HybridTest 1 600 6
   - mpirun -n 1 ./HybridTest 2 600 6
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
