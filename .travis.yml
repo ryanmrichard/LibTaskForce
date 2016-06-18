@@ -20,7 +20,7 @@ before_install:
 install:
   - cmake -version
 script:
-  - cmake -H. -Bbuild -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR} -DCMAKE_CXX_COMPILER=${CXX_COMPILER} -DMPI_CXX_COMPILER=mpicxx -DCMAKE_BUILD_TYPE=debug 
+  - cmake -H. -Bbuild -DCMAKE_INSTALL_PREFIX=${TRAVIS_BUILD_DIR} -DCMAKE_CXX_COMPILER=${CXX_COMPILER} -DMPI_CXX_COMPILER=mpicxx -DCMAKE_BUILD_TYPE=debug -DCMAKE_CXX_FLAGS=-coverage
   - cd build && make install
   - cd ${TRAVIS_BUILD_DIR}/bin
   - ./ThreadTest 2 30 500000000
