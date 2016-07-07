@@ -26,7 +26,7 @@ project(LibTaskForce LANGUAGES CXX)
 include(ExternalProject)
 
 #Add our special find cmake macros
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
 find_package(MPI REQUIRED)
 find_package(TBB REQUIRED)
@@ -44,18 +44,25 @@ set(LTF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 add_subdirectory(external)
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/stage${CMAKE_INSTALL_PREFIX}/external)
 ExternalProject_Add(libtaskforce_core
-                    SOURCE_DIR ${LTF_ROOT_DIR}/LibTaskForce
-                    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-                               -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-                               -DDESTDIR=${CMAKE_BINARY_DIR}/stage
-                               -DMPI_CXX_COMPILER=${MPI_CXX_COMPILER}
-                               -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-                               -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
-                               -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"
-                               -DLTF_ROOT_DIR=${LTF_ROOT_DIR}
-                    BUILD_ALWAYS 1
-                    INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install DESTDIR=${CMAKE_BINARY_DIR}/stage
+   SOURCE_DIR ${LTF_ROOT_DIR}/LibTaskForce
+   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+              -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+              -DDESTDIR=${CMAKE_BINARY_DIR}/stage
+              -DMPI_CXX_COMPILER=${MPI_CXX_COMPILER}
+              -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+              -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+              -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"
+              -DLTF_ROOT_DIR=${LTF_ROOT_DIR}
+   CMAKE_CACHE_ARGS -DCMAKE_PREFIX_PATH:STRING=${CMAKE_PREFIX_PATH}
+                    -DCMAKE_MODULE_PATH:STRING=${CMAKE_MODULE_PATH}
+   BUILD_ALWAYS 1
+   INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install DESTDIR=${CMAKE_BINARY_DIR}/stage
 )
 add_dependencies(libtaskforce_core cereal_external)
 
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/LibTaskForce
+        DESTINATION ${CMAKE_INSTALL_PREFIX} USE_SOURCE_PERMISSIONS
+        FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
+)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake DESTINATION ${CMAKE_INSTALL_PREFIX} USE_SOURCE_PERMISSIONS)
 install(DIRECTORY ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/ DESTINATION ${CMAKE_INSTALL_PREFIX} USE_SOURCE_PERMISSIONS)
