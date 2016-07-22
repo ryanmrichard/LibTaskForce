@@ -41,9 +41,14 @@ struct HybridTask {
     HybridComm& MyComm_;
     functor_type Fxn_;
     
-    ///Makes a new task that will be run in hybrid parallelism
-    HybridTask(HybridComm& Comm,functor_type Fxn) : 
+    ///Makes a new task that will be run in hybrid parallelism via copy
+    HybridTask(HybridComm& Comm,const functor_type& Fxn) : 
       MyComm_(Comm),Fxn_(Fxn)
+    {}
+    
+    ///Makes a new task via move semantics
+    HybridTask(HybridComm& Comm,functor_type&& Fxn):
+       MyComm_(Comm),Fxn_(std::move(Fxn))
     {}
     
     ///Intercepts calls if we are running threaded

@@ -85,9 +85,9 @@ public:
     
     
     template<typename return_type,typename functor_type>
-    HybridFuture<return_type> add_task(const functor_type& Fxn)
+    HybridFuture<return_type> add_task(functor_type&& Fxn)
     {
-        HybridTask<return_type,functor_type> Task(*this,Fxn);
+        HybridTask<return_type,functor_type> Task(*this,std::forward<functor_type>(Fxn));
 
         using process_ptr= typename HybridFuture<return_type>::process_ptr;
         using thread_ptr= typename HybridFuture<return_type>::thread_ptr;
