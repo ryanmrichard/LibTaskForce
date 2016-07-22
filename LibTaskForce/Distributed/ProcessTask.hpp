@@ -36,8 +36,8 @@ namespace LibTaskForce {
 template<typename T,typename functor_type,typename comm_type>
 struct ProcessTask : public Task<functor_type,comm_type> {
     ProcessTask(const ProcessTask&)=default;
-    ProcessTask(const functor_type& F,comm_type& Comm) :
-        Task<functor_type,comm_type>(F,Comm)
+    ProcessTask(functor_type&& F,comm_type& Comm) :
+        Task<functor_type,comm_type>(std::forward<functor_type>(F),Comm)
     {}
     
     T operator()()const

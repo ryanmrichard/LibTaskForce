@@ -48,7 +48,7 @@ struct HybridTask {
     
     ///Makes a new task via move semantics
     HybridTask(HybridComm& Comm,functor_type&& Fxn):
-       MyComm_(Comm),Fxn_(std::move(Fxn))
+       MyComm_(Comm),Fxn_(std::forward<functor_type>(Fxn))
     {}
     
     ///Intercepts calls if we are running threaded

@@ -123,9 +123,10 @@ public:
     
     ///Allows you to add tasks one at a time (useful if tasks are all different)
     template<typename return_type,typename functor_type>
-    ProcessFuture<return_type> add_task(const functor_type& Fxn)
+    ProcessFuture<return_type> add_task(functor_type&& Fxn)
     {
-        ProcessTask<return_type,functor_type,ProcessComm> Task(Fxn,*this);
+        ProcessTask<return_type,functor_type,ProcessComm> 
+                Task(std::forward<functor_type>(Fxn),*this);
         return Queue_->add_task<return_type>(Task);
     }
     

@@ -86,9 +86,10 @@ public:
      *  \return A future to the result of your task
      */
     template<typename return_type,typename functor_type>
-    ThreadFuture<return_type> add_task(const functor_type& Fxn)
+    ThreadFuture<return_type> add_task(functor_type&& Fxn)
     {
-        ThreadTask<return_type,functor_type,ThreadComm> Temp(Fxn,*this);
+        ThreadTask<return_type,functor_type,ThreadComm> 
+                Temp(std::forward<functor_type>(Fxn),*this);
         return Queue_->add_task(Temp);
     }
     

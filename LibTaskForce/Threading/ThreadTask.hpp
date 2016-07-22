@@ -42,8 +42,9 @@ struct ThreadTask :public Task<functor_type,comm_type> {
     std::shared_ptr<promise_type> P_;///<Eventually will be the result
     ThreadTask(const ThreadTask&) = default;
     
-    ThreadTask(const functor_type& F, comm_type& Cm) :
-    Task<functor_type,comm_type>(F,Cm),P_(std::make_shared<promise_type>())
+    ThreadTask(functor_type&& F, comm_type& Cm) :
+    Task<functor_type,comm_type>(std::forward<functor_type>(F),Cm),
+            P_(std::make_shared<promise_type>())
     {}
 
     ///The call used by tbb for running the task
