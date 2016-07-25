@@ -34,19 +34,7 @@
 namespace LibTaskForce {
 
 template<typename T,typename functor_type,typename comm_type>
-struct ProcessTask : public Task<functor_type,comm_type> {
-    ProcessTask(const ProcessTask&)=default;
-    ProcessTask(functor_type&& F,comm_type& Comm) :
-        Task<functor_type,comm_type>(std::forward<functor_type>(F),Comm)
-    {}
-    
-    T operator()()const
-    {
-        std::unique_ptr<comm_type> Comm=this->CurrentComm_.split();
-        return this->Fxn_(*Comm);
-    }
-        
-};
+using ProcessTask=Task<T,functor_type,comm_type>;
 
 }//End namespace LibTaskForce
 #endif /* LIBTASKFORCE_GHUARD_PROCESSTASK_HPP */

@@ -127,7 +127,7 @@ public:
     {
         ProcessTask<return_type,functor_type,ProcessComm> 
                 Task(std::forward<functor_type>(Fxn),*this);
-        return Queue_->add_task<return_type>(Task);
+        return Queue_->add_task<return_type>(std::move(Task));
     }
     
     /** \brief More efficient way of adding many tasks at once

@@ -30,28 +30,28 @@
 #define LIBTASKFORCE_GUARD_THREADTASK_HPP
 
 #include <future>
+#include <iostream>
 #include "LibTaskForce/General/GeneralTask.hpp"
 
 namespace LibTaskForce {
 
 ///A wrapper around a functor for use in ThreadComm::add_task
 template<typename T,typename functor_type,typename comm_type>
-struct ThreadTask :public Task<functor_type,comm_type> {
+struct ThreadTask :public Task<T,functor_type,comm_type> {
     using promise_type = std::promise<T>;
     using return_type=T;
-    std::shared_ptr<promise_type> P_;///<Eventually will be the result
-    ThreadTask(const ThreadTask&) = default;
+    using base_t=Task<T,functor_type,comm_type>;
     
+    std::shared_ptr<promise_type> P_;///<Eventually will be the result
+           
     ThreadTask(functor_type&& F, comm_type& Cm) :
-    Task<functor_type,comm_type>(std::forward<functor_type>(F),Cm),
-            P_(std::make_shared<promise_type>())
+        base_t(std::forward<functor_type>(F),Cm),
+        P_(std::make_shared<promise_type>())
     {}
-
-    ///The call used by tbb for running the task
-    void operator()()const
-    {
-        std::unique_ptr<comm_type> Comm=this->CurrentComm_.split();
-        P_->set_value(this->Fxn_(*Comm));
+    
+    void operator()()const{
+        P_->set_value(base_t::operator()());
+        
     }
 };
 

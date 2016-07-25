@@ -93,10 +93,10 @@ public:
         using process_ptr= typename HybridFuture<return_type>::process_ptr;
         using thread_ptr= typename HybridFuture<return_type>::thread_ptr;
         thread_ptr TF(UseThreads()?new ThreadFuture<return_type>(
-                     std::move(ThreadComm_->add_task<return_type>(Task)))
+                     std::move(ThreadComm_->add_task<return_type>(std::move(Task))))
                      : nullptr);
         process_ptr PF(!UseThreads()?new ProcessFuture<return_type>(
-                    std::move(ProcessComm_->add_task<return_type>(Task)))
+                    std::move(ProcessComm_->add_task<return_type>(std::move(Task))))
                     :nullptr);
         return HybridFuture<return_type>(std::move(PF),std::move(TF));
     }

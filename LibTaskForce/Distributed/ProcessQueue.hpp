@@ -44,7 +44,7 @@ public:
     ProcessQueue(ProcessComm& Comm);
     
     template<typename return_type,typename task_type>
-    ProcessFuture<return_type> add_task(task_type Task)
+    ProcessFuture<return_type> add_task(task_type&& Task)
     {
         using FutureType=ProcessFuture<return_type>;
         FutureType Temp;

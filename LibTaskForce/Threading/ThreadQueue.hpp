@@ -37,8 +37,25 @@ PRAGMA_WARNING_IGNORE_FP_EQUALITY
 #include <tbb/tbb.h>
 PRAGMA_WARNING_POP
 
+#include<type_traits>
+
 namespace LibTaskForce {
 template<typename T> class ThreadFuture;
+
+//TBB doesn't support move semantics yet, so fake them...
+template<typename TaskType>
+struct ThreadWrapper{
+    const TaskType& Task_;
+    
+    ThreadWrapper(const TaskType& Task):
+        Task_(Task){}
+    
+    void operator()()const
+    {
+        Task_();
+    }
+                
+};
 
 ///Abstracts away the actual queue implementation
 class ThreadQueue{
@@ -49,10 +66,11 @@ public:
     {}
     
     template<typename TaskType>
-    ThreadFuture<typename TaskType::return_type> add_task(TaskType& Task)
-    {
+    ThreadFuture<typename TaskType::return_type> add_task(const TaskType& Task)
+    {           
         ThreadFuture<typename TaskType::return_type> 
             Fut(std::move(Task.P_->get_future()),*this);
+
         Queue_.run(Task);
         return Fut;
     }

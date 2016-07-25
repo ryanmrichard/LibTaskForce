@@ -39,7 +39,6 @@ namespace LibTaskForce {
 class ThreadEnv;
 class ThreadQueue;
 
-
 /** \brief The user interface to thread parallelism
  * 
  *  This is built on top of TBB and we defer much of this comm's operations to
@@ -89,8 +88,8 @@ public:
     ThreadFuture<return_type> add_task(functor_type&& Fxn)
     {
         ThreadTask<return_type,functor_type,ThreadComm> 
-                Temp(std::forward<functor_type>(Fxn),*this);
-        return Queue_->add_task(Temp);
+                Task(std::forward<functor_type>(Fxn),*this);
+        return Queue_->add_task(Task);
     }
     
     /** \brief The main call for doing a reduce

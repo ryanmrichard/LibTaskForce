@@ -39,26 +39,22 @@ class HybridComm;
 template<typename return_type,typename functor_type>
 struct HybridTask {
     HybridComm& MyComm_;
-    functor_type Fxn_;
-    
-    ///Makes a new task that will be run in hybrid parallelism via copy
-    HybridTask(HybridComm& Comm,const functor_type& Fxn) : 
-      MyComm_(Comm),Fxn_(Fxn)
-    {}
-    
+    std::shared_ptr<functor_type> Fxn_;
+   
     ///Makes a new task via move semantics
     HybridTask(HybridComm& Comm,functor_type&& Fxn):
-       MyComm_(Comm),Fxn_(std::forward<functor_type>(Fxn))
+       MyComm_(Comm),
+       Fxn_(std::make_shared<functor_type>(std::forward<functor_type>(Fxn)))
     {}
     
     ///Intercepts calls if we are running threaded
     return_type operator()(ThreadComm&)const{
-        return Fxn_(MyComm_);
+        return (*Fxn_)(MyComm_);
     }
     
     ///Intercepts calls if we are running distributed
     return_type operator()(ProcessComm&)const{
-        return Fxn_(MyComm_);
+        return (*Fxn_)(MyComm_);
     }
 };
 

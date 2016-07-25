@@ -31,14 +31,23 @@
 
 namespace LibTaskForce {
 
-template<typename functor_type,typename comm_type>
+template<typename T,typename functor_type,typename comm_type>
 struct Task {
     comm_type& CurrentComm_;
-    functor_type Fxn_;
-    Task(const functor_type& Fxn,comm_type& Comm) :
-       CurrentComm_(Comm),Fxn_(Fxn)
+    
+    std::shared_ptr<functor_type> Fxn_;
+    
+    Task(functor_type&& Fxn,comm_type& Comm) :
+       CurrentComm_(Comm),
+       Fxn_(std::make_shared<functor_type>(std::forward<functor_type>(Fxn)))
     {}
-    Task(const Task&)=default;
+    
+    T operator()()const{
+        std::unique_ptr<comm_type> Comm=this->CurrentComm_.split();
+        return this->Fxn_->operator()(*Comm);
+    }
+    
+    
 };
 
 

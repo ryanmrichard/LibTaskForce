@@ -22,6 +22,7 @@
 #include <vector>
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include "LibTaskForce/LibTaskForce.hpp"
 
 const std::array<size_t,39> FibNums={
@@ -36,16 +37,19 @@ using namespace LibTaskForce;
 
 //Functor for computing Fibonacci number (tests add_task())
 struct FibTask{
-    const size_t N_;
+    //Unique_ptr used to ensure move semantics work
+    std::unique_ptr<size_t> N_;
     FibTask(size_t N):
-        N_(N)
-    {}
-    
+        N_(new size_t)
+    {
+        *N_=N;
+    }
+        
     size_t operator()(ThreadComm& Comm)const
     {
-        if(N_<2)return N_;
-        ThreadFuture<size_t> x=Comm.add_task<size_t>(FibTask(N_-1));
-        ThreadFuture<size_t> y=Comm.add_task<size_t>(FibTask(N_-2));
+        if(*N_<2)return *N_;
+        ThreadFuture<size_t> x=Comm.add_task<size_t>(FibTask(*N_-1));
+        ThreadFuture<size_t> y=Comm.add_task<size_t>(FibTask(*N_-2));
         size_t RVal=x.get(),LVal=y.get();
         return RVal+LVal;
     }

@@ -23,7 +23,6 @@ add_library(taskforce $<TARGET_OBJECTS:Threading>
 )
 set(LIBTASKFORCE_LIBRARIES taskforce ${TBB_LIBRARIES} ${MPI_CXX_LIBRARIES})
 add_subdirectory(Tests)
-
 configure_file("libtaskforceConfig.cmake.in" "libtaskforceConfig.cmake" @ONLY)
 install(TARGETS taskforce DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 install(FILES ${CMAKE_BINARY_DIR}/libtaskforceConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})

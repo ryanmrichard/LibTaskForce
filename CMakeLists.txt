@@ -66,3 +66,26 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/LibTaskForce
 )
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake DESTINATION ${CMAKE_INSTALL_PREFIX} USE_SOURCE_PERMISSIONS)
 install(DIRECTORY ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/ DESTINATION ${CMAKE_INSTALL_PREFIX} USE_SOURCE_PERMISSIONS)
+
+include(CTest)
+enable_testing()
+set(TEST_BIN ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/bin)
+set(THREAD_EXE ${TEST_BIN}/ThreadTest)
+set(DIST_EXE ${TEST_BIN}/DistTest)
+set(HYBRID_EXE ${TEST_BIN}/HybridTest)
+
+#The mpirun's should really be ${MPIEXEC}, which is set by find mpi, but mpiexec
+#uses Python 2 still....
+
+add_test(NAME ThreadingTest 
+         COMMAND ${THREAD_EXE} 2 30 500000000
+)
+add_test(NAME DistributedTest 
+         COMMAND mpirun -n 2 ${DIST_EXE} 600 6
+)
+add_test(NAME HybridDistributed 
+         COMMAND mpirun -n 2 ${HYBRID_EXE} 1 600 6
+)
+add_test(NAME HybridThreading
+         COMMAND mpirun -n 1 ${HYBRID_EXE} 2 600 6
+)
