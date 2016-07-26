@@ -34,7 +34,15 @@
 namespace LibTaskForce {
 
 template<typename T,typename functor_type,typename comm_type>
-using ProcessTask=Task<T,functor_type,comm_type>;
+struct ProcessTask: public Task<T,functor_type,comm_type>{
+    
+    using Task<T,functor_type,comm_type>::Task;
+    
+    T operator()()const{
+        return this->Fxn_->operator()(this->CurrentComm_);
+    }
+    
+};
 
 }//End namespace LibTaskForce
 #endif /* LIBTASKFORCE_GHUARD_PROCESSTASK_HPP */

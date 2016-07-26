@@ -78,6 +78,11 @@ size_t HybridComm::nprocs()const
     return ActiveProcess().size();
 }
 
+void HybridComm::barrier()const
+{
+    ProcessComm_->barrier();
+}
+
 
 std::unique_ptr<HybridComm> HybridComm::split(size_t NProcs, size_t NThreads) const
 {
@@ -90,6 +95,12 @@ std::unique_ptr<HybridComm> HybridComm::split(size_t NProcs, size_t NThreads) co
     Env_->register_comm(NewComm.get());
     NewComm->Registered_=true;
     return NewComm;
+}
+
+std::ostream& operator<<(std::ostream& os, const HybridComm& comm){
+    os<<"Process "<<comm.rank()<<"/"<<comm.nprocs()<<std::endl;
+    os<<"Threads "<<comm.nthreads()<<std::endl;
+    return os;
 }
 
 }//End namespace

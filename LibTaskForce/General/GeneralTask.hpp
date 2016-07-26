@@ -37,12 +37,14 @@ struct Task {
     
     std::shared_ptr<functor_type> Fxn_;
     
+    virtual ~Task(){}
+    
     Task(functor_type&& Fxn,comm_type& Comm) :
        CurrentComm_(Comm),
        Fxn_(std::make_shared<functor_type>(std::forward<functor_type>(Fxn)))
     {}
     
-    T operator()()const{
+    virtual T operator()()const{
         std::unique_ptr<comm_type> Comm=this->CurrentComm_.split();
         return this->Fxn_->operator()(*Comm);
     }

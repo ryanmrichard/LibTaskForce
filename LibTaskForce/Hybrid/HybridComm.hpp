@@ -83,6 +83,7 @@ public:
     size_t nthreads()const;///< Returns the number of threads
     size_t nprocs()const;///< Returns the number of processes
     
+    void barrier()const;
     
     template<typename return_type,typename functor_type>
     HybridFuture<return_type> add_task(functor_type&& Fxn)
@@ -93,14 +94,18 @@ public:
         using process_ptr= typename HybridFuture<return_type>::process_ptr;
         using thread_ptr= typename HybridFuture<return_type>::thread_ptr;
         thread_ptr TF(UseThreads()?new ThreadFuture<return_type>(
-                     std::move(ThreadComm_->add_task<return_type>(std::move(Task))))
-                     : nullptr);
+            std::move(ThreadComm_->add_task<return_type>(
+                std::move(Task)
+            ))): nullptr);
         process_ptr PF(!UseThreads()?new ProcessFuture<return_type>(
-                    std::move(ProcessComm_->add_task<return_type>(std::move(Task))))
-                    :nullptr);
+            std::move(ProcessComm_->add_task<return_type>(
+                std::move(Task)
+            ))):nullptr);
         return HybridFuture<return_type>(std::move(PF),std::move(TF));
     }
 };
+
+std::ostream& operator<<(std::ostream& os, const HybridComm& comm);
 
 
 }//End namespace LIbTaskForce

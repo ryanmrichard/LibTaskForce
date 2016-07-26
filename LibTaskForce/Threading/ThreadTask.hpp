@@ -49,9 +49,10 @@ struct ThreadTask :public Task<T,functor_type,comm_type> {
         P_(std::make_shared<promise_type>())
     {}
     
-    void operator()()const{
-        P_->set_value(base_t::operator()());
-        
+    T operator()()const{
+        T value=base_t::operator()();
+        P_->set_value(value);
+        return value;
     }
 };
 
