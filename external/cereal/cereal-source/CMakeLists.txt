@@ -1,3 +1,4 @@
+#Modified from the original Cereal CMakeLists.txt to setup the config file
 cmake_minimum_required (VERSION 2.6.2)
 project (cereal)
 
