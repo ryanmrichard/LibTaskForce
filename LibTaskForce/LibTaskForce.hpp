@@ -40,6 +40,7 @@
 #include "LibTaskForce/Hybrid/HybridEnv.hpp"
 #include "LibTaskForce/Hybrid/HybridComm.hpp"
 #include "LibTaskForce/Hybrid/HybridFuture.hpp"
+#include "LibTaskForce/Hybrid/HybridQueue.hpp"
 
 #include "LibTaskForce/Util/pragma.h"
 
