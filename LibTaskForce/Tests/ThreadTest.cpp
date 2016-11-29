@@ -23,6 +23,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <numeric>
+#include <cmath>
 #include "LibTaskForce/LibTaskForce.hpp"
 
 const std::array<size_t,39> FibNums={
@@ -106,7 +108,7 @@ int main(int argc,char** argv){
     t0=tbb::tick_count::now();
     double DaSum=NewComm->reduce<double>(MyReduceTask(),Vec.begin(),Vec.end());
     t1=tbb::tick_count::now();
-    if(fabs(100.0*(DaSum-TheoryValue)/TheoryValue)>1e-5)
+    if(std::fabs(100.0*(DaSum-TheoryValue)/TheoryValue)>1e-5)
         throw std::runtime_error("Summation added up to the wrong value\n");
     std::cout<<"Wall time: "<<(t1-t0).seconds()<<std::endl;
     return 0;
