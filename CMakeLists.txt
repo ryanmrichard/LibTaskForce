@@ -21,8 +21,10 @@
 # CMAKE_BUILD_TYPE   Do you want debug symbols?
 # CMAKE_BINARY_DIR   Where we are building (can also be specified with -B flag)
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1.3)
 project(LibTaskForce LANGUAGES CXX)
+set(CMAKE_CXX_EXTENSIONS False CACHE BOOL "Enable/Disable compiler-specific C++ extensions")
+set(CMAKE_CXX_STANDARD 14 CACHE STRING "Which C++ standard to use")
 include(ExternalProject)
 
 #Add our special find cmake macros
@@ -31,8 +33,14 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 find_package(MPI REQUIRED)
 find_package(TBB REQUIRED)
 
+# CMake doesn't support Intel CXX standard until cmake 3.6
+if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
+  if("${CMAKE_VERSION}" VERSION_LESS "3.6")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++${CMAKE_CXX_STANDARD}")
+  endif()
+endif()
+
 #Sets some extra debug flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
 string(TOLOWER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_LOWER) 
 if(BUILD_TYPE_LOWER STREQUAL "debug")
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wfloat-equal -Wshadow -Wconversion")
@@ -55,6 +63,8 @@ ExternalProject_Add(libtaskforce_core
               -DLTF_ROOT_DIR=${LTF_ROOT_DIR}
    CMAKE_CACHE_ARGS -DCMAKE_PREFIX_PATH:STRING=${CMAKE_PREFIX_PATH}
                     -DCMAKE_MODULE_PATH:STRING=${CMAKE_MODULE_PATH}
+                    -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD}
+                    -DCMAKE_CXX_EXTENSIONS:BOOL=${CMAKE_CXX_EXTENSIONS}
    BUILD_ALWAYS 1
    INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install DESTDIR=${CMAKE_BINARY_DIR}/stage
 )

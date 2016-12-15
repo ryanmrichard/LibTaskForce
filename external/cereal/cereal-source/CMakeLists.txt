@@ -4,7 +4,7 @@ project (cereal)
 
 option(SKIP_PORTABILITY_TEST "Skip portability tests" OFF)
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Werror -g -Wextra -Wshadow -pedantic ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-Wall -Werror -g -Wextra -Wshadow -pedantic ${CMAKE_CXX_FLAGS}")
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include 
         DESTINATION ${CMAKE_INSTALL_PREFIX}/cereal)
