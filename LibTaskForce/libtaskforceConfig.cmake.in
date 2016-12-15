@@ -31,9 +31,6 @@ find_path(LIBTASKFORCE_INCLUDE_DIR
 # Create the target to link against
 add_library(libtaskforce INTERFACE)
 
-# Required options
-target_compile_options(libtaskforce INTERFACE "-std=c++11")
-
 
 #######################################
 # Add the various include directories

@@ -4,6 +4,5 @@ find_path(CEREAL_INCLUDE_DIR
           NO_DEFAULT_PATH
 )
 add_library(cereal INTERFACE)
-target_compile_options(cereal INTERFACE "-std=c++11")
 target_include_directories(cereal INTERFACE ${CEREAL_INCLUDE_DIR})
 set(CEREAL_INCLUDE_DIRS ${CEREAL_INCLUDE_DIR})
