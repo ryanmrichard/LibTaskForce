@@ -9,9 +9,10 @@ find_package(cereal QUIET)
 if(NOT CEREAL_FOUND)
   message(STATUS "We will install cereal for you")
   ExternalProject_Add(cereal_external
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cereal-source
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}/external
-    BUILD_COMMAND echo "Skipping building for header-only library"
+    GIT_REPOSITORY https://github.com/USCiLab/cereal
+    GIT_TAG bd839ccb47dfb5462331fede7c5f013ca8dc60cb
+    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+               -DJUST_INSTALL_CEREAL=True
     INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install DESTDIR=${CMAKE_BINARY_DIR}/stage
   )
 else()
