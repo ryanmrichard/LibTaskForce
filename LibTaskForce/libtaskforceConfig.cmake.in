@@ -8,29 +8,28 @@
 #                                                                              #
 ################################################################################
 
-set(LIBTASKFORCE_EXTERNAL_DIR "${CMAKE_CURRENT_LIST_DIR}/external")
-list(APPEND CMAKE_PREFIX_PATH "${LIBTASKFORCE_EXTERNAL_DIR}/cereal")
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules/")
+set(LIBTASKFORCE_CONFIG_PATH ${CMAKE_CURRENT_LIST_DIR})
+get_filename_component(LIBTASKFORCE_PREFIX_PATH ${LIBTASKFORCE_CONFIG_PATH} DIRECTORY)
+get_filename_component(LIBTASKFORCE_PREFIX_PATH ${LIBTASKFORCE_PREFIX_PATH} DIRECTORY)
+get_filename_component(LIBTASKFORCE_PREFIX_PATH ${LIBTASKFORCE_PREFIX_PATH} DIRECTORY)
 
-# Find external projects
-find_package(TBB REQUIRED)
-find_package(cereal REQUIRED)
+
+find_package(cereal CONFIG REQUIRED)
 
 find_library(LIBTASKFORCE_LIBRARY
              NAMES taskforce
-             PATHS ${CMAKE_CURRENT_LIST_DIR}/lib
+             PATHS ${LIBTASKFORCE_PREFIX_PATH}/lib
              NO_DEFAULT_PATH
 )
 
 find_path(LIBTASKFORCE_INCLUDE_DIR
           NAMES LibTaskForce/LibTaskForce.hpp
-          PATHS ${CMAKE_CURRENT_LIST_DIR}
+          PATHS ${LIBTASKFORCE_PREFIX_PATH}/include
           NO_DEFAULT_PATH
 )
 
 # Create the target to link against
 add_library(libtaskforce INTERFACE)
-
 
 #######################################
 # Add the various include directories
@@ -38,10 +37,12 @@ add_library(libtaskforce INTERFACE)
 
 # Main LibTaskForce headers
 list(APPEND LIBTASKFORCE_INCLUDE_DIRS ${LIBTASKFORCE_INCLUDE_DIR} 
-   @MPI_CXX_INCLUDE_PATH@ ${CEREAL_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS})
-list(APPEND LIBTASKFORCE_LIBRARIES ${LIBTASKFORCE_LIBRARY} ${TBB_LIBRARIES}
-   @MPI_CXX_LIBRARIES@
-)
+   @MPI_CXX_INCLUDE_PATH@ ${CEREAL_INCLUDE_DIRS} @TBB_INCLUDE_DIRS@)
+list(APPEND LIBTASKFORCE_LIBRARIES cereal
+                                   ${LIBTASKFORCE_LIBRARY}
+                                   @TBB_LIBRARIES@
+                                   @MPI_CXX_LIBRARIES@
+    )
 
 target_include_directories(libtaskforce SYSTEM INTERFACE ${LIBTASKFORCE_INCLUDE_DIRS})
 target_link_libraries(libtaskforce INTERFACE ${LIBTASKFORCE_LIBRARIES})

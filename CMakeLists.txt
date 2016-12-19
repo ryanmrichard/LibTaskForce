@@ -25,13 +25,6 @@ cmake_minimum_required(VERSION 3.1.3)
 project(LibTaskForce LANGUAGES CXX)
 set(CMAKE_CXX_EXTENSIONS False CACHE BOOL "Enable/Disable compiler-specific C++ extensions")
 set(CMAKE_CXX_STANDARD 14 CACHE STRING "Which C++ standard to use")
-include(ExternalProject)
-
-#Add our special find cmake macros
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
-
-find_package(MPI REQUIRED)
-find_package(TBB REQUIRED)
 
 # CMake doesn't support Intel CXX standard until cmake 3.6
 if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
@@ -40,6 +33,15 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
   endif()
 endif()
 
+include(ExternalProject)
+
+#Add our special find cmake macros
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
+
+find_package(MPI REQUIRED)
+find_package(TBB REQUIRED)
+
+
 #Sets some extra debug flags
 string(TOLOWER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_LOWER) 
 if(BUILD_TYPE_LOWER STREQUAL "debug")
@@ -47,12 +49,12 @@ if(BUILD_TYPE_LOWER STREQUAL "debug")
 endif()
 
 #This folder
-set(LTF_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(LIBTASKFORCE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(external)
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/stage${CMAKE_INSTALL_PREFIX}/external)
 ExternalProject_Add(libtaskforce_core
-   SOURCE_DIR ${LTF_ROOT_DIR}/LibTaskForce
+   SOURCE_DIR ${LIBTASKFORCE_ROOT_DIR}/LibTaskForce
    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
               -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
               -DDESTDIR=${CMAKE_BINARY_DIR}/stage
@@ -60,7 +62,9 @@ ExternalProject_Add(libtaskforce_core
               -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
               -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
               -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"
-              -DLTF_ROOT_DIR=${LTF_ROOT_DIR}
+              -DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}
+              -DCMAKE_POSITION_INDEPENDENT_CODE=${CMAKE_POSITION_INDEPENDENT_CODE}
+              -DLIBTASKFORCE_ROOT_DIR=${LIBTASKFORCE_ROOT_DIR}
    CMAKE_CACHE_ARGS -DCMAKE_PREFIX_PATH:STRING=${CMAKE_PREFIX_PATH}
                     -DCMAKE_MODULE_PATH:STRING=${CMAKE_MODULE_PATH}
                     -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD}
@@ -71,10 +75,10 @@ ExternalProject_Add(libtaskforce_core
 add_dependencies(libtaskforce_core cereal_external)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/LibTaskForce
-        DESTINATION ${CMAKE_INSTALL_PREFIX} USE_SOURCE_PERMISSIONS
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/include USE_SOURCE_PERMISSIONS
         FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
 )
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake DESTINATION ${CMAKE_INSTALL_PREFIX} USE_SOURCE_PERMISSIONS)
+#install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/cmake DESTINATION ${CMAKE_INSTALL_PREFIX}/share USE_SOURCE_PERMISSIONS)
 install(DIRECTORY ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/ DESTINATION ${CMAKE_INSTALL_PREFIX} USE_SOURCE_PERMISSIONS)
 
 include(CTest)
