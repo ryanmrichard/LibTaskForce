@@ -62,7 +62,6 @@ public:
     
     ///Returns the value of the future (requires communication)
     T get(){
-        std::cout<<"In get from "<<Rank_<<std::endl;
         T NewData;
         bcast((empty()?NewData:*Data_),Scheduler_->mpi_comm(),Rank_);
         return (empty()? NewData : *Data_);
